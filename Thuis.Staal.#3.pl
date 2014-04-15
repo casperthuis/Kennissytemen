@@ -24,7 +24,7 @@ is_true( P1 or P2 ):-
     ;
     is_true( P2 ).
 
-
+daniel staal
 /* --- A simple forward chaining rule interpreter --- */
 
 forward:-
