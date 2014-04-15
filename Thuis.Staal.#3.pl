@@ -42,7 +42,7 @@ new_derived_fact( Conclusion ):-
     composed_fact( Condition ).
 
 composed_fact( Condition ):-
-    fact( Condition ).
+    fact( Condition ).da
 
 composed_fact( Condition1 and Condition2 ):-
     composed_fact( Condition1 ),
