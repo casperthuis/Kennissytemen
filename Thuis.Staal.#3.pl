@@ -25,6 +25,7 @@ is_true( P1 or P2 ):-
     is_true( P2 ).
 
 
+ hallo daniel
 /* --- A simple forward chaining rule interpreter --- */
 
 forward:-
@@ -52,4 +53,3 @@ composed_fact( Condition1 or Condition2 ):-
     composed_fact( Condition1 )
     ;
     composed_fact( Condition2 ).
-    
