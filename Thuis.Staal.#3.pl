@@ -135,40 +135,6 @@ getletters(32,[],32):-!.
 getletters(Let,[Let|Letters],Nextchar) :- 
     get0(Char), 
     getletters(Char,Letters,Nextchar).
-<<<<<<< HEAD
 
 
-if koorts then malaria.
-if diarree then darminfectie.
-if jeuk then huidziekte.
 
-if malaria then malaria-tertiana or malaria-tropica.
-
-if hoge-koorts and hoge-pieken then malaria-tertiana.
-if hoge-koorts and 3-dagen-koorts then malaria-tropica.
-if hoge-koorts and diarree-perdag and hevige-krampen then bacillaire-dysenterie.
-if bloedslijm and diarree and cysten then amoeben-dysenterie. %vraag over diarree 
-if hoge-koorts and diarree then tyfus.
-if rode-jeukende-plekken and licht-schilferende-huid and jeuk then schimmels.
-if jeukende-huiduitslag and jeuk then mijten.
-if jeukende-rode-pukkels and jeuk then prickly-heat.    
-   
-    
-
-addFacts([]):- forward. 
-
-addFacts([H|List]):- 
-    assert(fact(H)), 
-    addFacts(List).
-
-writeSymtoms([]).
-
-writeSymtoms([FirstSyntom|List]):-
-    write('Heb je dit syntoom : '),
-    write(FirstSyntom),
-    nl,
-    writeSymtoms(List).
-
-
-=======
->>>>>>> 6a4400289d7ee1d9e037cbbd62b524b0ddca5e14
