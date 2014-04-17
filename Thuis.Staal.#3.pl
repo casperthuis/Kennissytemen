@@ -1,3 +1,4 @@
+
 /* --- Defining operators --- */
 
 :- op(800, fx, if).
@@ -57,11 +58,17 @@ composed_fact( Condition1 or Condition2 ):-
 go:-
     write( 'Geef 1 van de syntomen die hier beneden staan. Scheid de syntomen met een spatie en eidnig met een punt.' ),
     nl,
-    write( ' koorts, hoofdpijn, diarree, bloed-ontlasting, cysten-ontlasting, jeuk,  rode-vlekken  : ' ),  
+    symptomsSuperclasses(List),
+    write(List),
     getsentence(Input),
     write(Input),
     addFacts(Input).
-    
+
+symptomsSuperclasses([X,Y,Z]):-
+    if X then malaria,
+    if Y then darminfectie,
+    if Z then huidziekte.
+
 getsentence(Input) :- 
     get0(Char), 
     getrest(Char,Input). 
@@ -86,10 +93,22 @@ getletters(Let,[Let|Letters],Nextchar) :-
     getletters(Char,Letters,Nextchar).
 
 
-if koorts then malaria. 
-if hogekoorts then malariatertiana.    
+if koorts then malaria.
+if diarree then darminfectie.
+if jeuk then huidziekte.
+
+if malaria then malaria-tertiana or malaria-tropica.
+
+if hoge-koorts and hoge-pieken then malaria-tertiana.
+if hoge-koorts and 3-dagen-koorts then malaria-tropica.
+if hoge-koorts and diarree-perdag and hevige-krampen then bacillaire-dysenterie.
+if bloedslijm and diarree and cysten then amoeben-dysenterie. %vraag over diarree 
+if hoge-koorts and diarree then tyfus.
+if rode-jeukende-plekken and licht-schilferende-huid and jeuk then schimmels.
+if jeukende-huiduitslag and jeuk then mijten.
+if jeukende-rode-pukkels and jeuk then prickly-heat.    
+   
     
- 
 
 addFacts([]):- forward. 
 
