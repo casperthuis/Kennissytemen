@@ -62,12 +62,56 @@ go:-
     writeSymtoms(List),
     getsentence(Input),
     write(Input),
-    addFacts(Input).
+    addFacts(Input),
+    nextQuestion.
 
-symptomsSuperclasses([X,Y,Z]):-
-    if X then malaria,
-    if Y then darminfectie,
-    if Z then huidziekte.
+sd(malaria).
+sd(darminfectie).
+sd(huidziekte).
+
+symptomsSuperclasses(List):-
+    findall(Superclasses, sd(Superclasses), ListSup),
+    findPropSuperclasses(ListSup, List3),
+    toAtoms(List3, List2),
+    list_to_set(List2, List).
+
+findPropSuperclasses([], _).
+
+findPropSuperclasses([H|Rest], [X|List]):-
+    if X then H,
+    findPropSuperclasses(Rest, List).
+
+toAtoms([], _).
+
+toAtoms([H|Rest], [H|List]):-
+    atom(H),
+    toAtoms(Rest, List).
+
+toAtoms([H|Rest], List):-
+    (H = X and Y;
+    H = X or Y), 
+    toAtoms([X,Y|Rest], List).
+
+if koorts or gebeten then malaria.
+if diarree or koorts then darminfectie.
+if jeuk then huidziekte.
+if malaria and hoge-koorts and hoge-pieken then malaria-tertiana.
+if malaria and hoge-koorts and 3-dagen-koorts then malaria-tropica.
+if darminfectie and hoge-koorts and diarree-perdag and hevige-krampen then bacillaire-dysenterie.
+if darminfectie and bloedslijm and diarree and cysten then amoeben-dysenterie. %vraag over diarree 
+if darminfectie and hoge-koorts and diarree then tyfus.
+if huidziekte and rode-jeukende-plekken and licht-schilferende-huid and jeuk then schimmels.
+if huidziekte and jeukende-huiduitslag and jeuk then mijten.
+if huidziekte and jeukende-rode-pukkels and jeuk then prickly-heat.    
+   
+    
+
+addFacts([]):- forward. 
+
+addFacts([H|List]):- 
+    assert(fact(H)), 
+    addFacts(List).
+
 
 getsentence(Input) :- 
     get0(Char), 
@@ -91,6 +135,7 @@ getletters(32,[],32):-!.
 getletters(Let,[Let|Letters],Nextchar) :- 
     get0(Char), 
     getletters(Char,Letters,Nextchar).
+<<<<<<< HEAD
 
 
 if koorts then malaria.
@@ -125,3 +170,5 @@ writeSymtoms([FirstSyntom|List]):-
     writeSymtoms(List).
 
 
+=======
+>>>>>>> 6a4400289d7ee1d9e037cbbd62b524b0ddca5e14
