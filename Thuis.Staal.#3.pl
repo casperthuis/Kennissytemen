@@ -52,7 +52,6 @@ composed_fact( Condition1 or Condition2 ):-
     composed_fact( Condition1 )
     ;
     composed_fact( Condition2 ).
-<<<<<<< HEAD
 
 
 go:-
@@ -97,6 +96,3 @@ addFacts([]):- forward.
 addFacts([H|List]):- 
     assert(fact(H)), 
     addFacts(List).
-=======
-    
->>>>>>> 50d35fe872f35a9e6cdc06130a4a8a1844c26eca
