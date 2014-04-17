@@ -59,11 +59,19 @@ go:-
     write( 'Geef 1 van de syntomen die hier beneden staan. Scheid de syntomen met een spatie en eidnig met een punt.' ),
     nl,
     symptomsSuperclasses(List),
-    writeSymtoms(List),
+    writeSymptoms(List),
     getsentence(Input),
     write(Input),
     addFacts(Input),
-    nextQuestion.
+    questions.
+
+writeSymptoms([]).
+
+writeSymptoms([FirstSymptom|List]):-
+    write('Heb je dit symptoom : '),
+    write(FirstSymptom),
+    nl,
+    writeSymptoms(List).
 
 sd(malaria).
 sd(darminfectie).
@@ -75,13 +83,13 @@ symptomsSuperclasses(List):-
     toAtoms(List3, List2),
     list_to_set(List2, List).
 
-findPropSuperclasses([], _).
+findPropSuperclasses([], []).
 
 findPropSuperclasses([H|Rest], [X|List]):-
     if X then H,
     findPropSuperclasses(Rest, List).
 
-toAtoms([], _).
+toAtoms([], []).
 
 toAtoms([H|Rest], [H|List]):-
     atom(H),
@@ -92,6 +100,7 @@ toAtoms([H|Rest], List):-
     H = X or Y), 
     toAtoms([X,Y|Rest], List).
 
+%Superclass staat vooraan
 if koorts or gebeten then malaria.
 if diarree or koorts then darminfectie.
 if jeuk then huidziekte.
@@ -104,7 +113,47 @@ if huidziekte and rode-jeukende-plekken and licht-schilferende-huid and jeuk the
 if huidziekte and jeukende-huiduitslag and jeuk then mijten.
 if huidziekte and jeukende-rode-pukkels and jeuk then prickly-heat.    
    
-    
+
+questions:-
+    findall(Superclasses, fact(Superclasses), ListFacts),
+    checkSuperclasses(ListFacts, ListSups),
+    checkSups(ListSups, Disease),
+    write(Disease).
+
+checkSups([], _):- fail.
+
+checkSups([H|_], Disease):-
+    askQuestions(H, Disease).
+
+checkSups([_|Rest], Disease):-
+    checkSups(Rest, Disease).
+
+
+askQuestions(Superclass, Disease):-
+    getDecomposedLists(Superclass, List),
+    checkForSuperclass(Superclass, List, Symps),
+    toAtoms(Symps, Symptoms),
+    writeSymptoms(Symptoms),
+    getsentence(Input),
+    addFacts(Input),
+    checkForDisease(Disease).
+
+getDecomposedLists(Superclass, DecList):-
+    findall(Premises, if Premises then _, List),
+    decomposeList(Superclass, List, DecList).
+
+decomposeList(_, [], []).
+
+decomposeList(Superclass, [H|List], [Rest|DecList]):-
+    toAtoms([H], [X|Rest]),
+    member(Superclass, [X|Rest]),
+    decomposeList(Superclass, List, DecList).
+
+
+decomposeList(Superclass, [_|List], DecList):-
+    decomposeList(Superclass, List, DecList).
+
+
 
 addFacts([]):- forward. 
 
