@@ -43,7 +43,7 @@ new_derived_fact( Conclusion ):-
     composed_fact( Condition ).
 
 composed_fact( Condition ):-
-    fact( Condition ).da
+    fact( Condition ).
 
 composed_fact( Condition1 and Condition2 ):-
     composed_fact( Condition1 ),
@@ -59,7 +59,7 @@ go:-
     write( 'Geef 1 van de syntomen die hier beneden staan. Scheid de syntomen met een spatie en eidnig met een punt.' ),
     nl,
     symptomsSuperclasses(List),
-    write(List),
+    writeSymtoms(List),
     getsentence(Input),
     write(Input),
     addFacts(Input).
@@ -115,3 +115,13 @@ addFacts([]):- forward.
 addFacts([H|List]):- 
     assert(fact(H)), 
     addFacts(List).
+
+writeSymtoms([]).
+
+writeSymtoms([FirstSyntom|List]):-
+    write('Heb je dit syntoom : '),
+    write(FirstSyntom),
+    nl,
+    writeSymtoms(List).
+
+
