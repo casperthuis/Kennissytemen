@@ -43,7 +43,7 @@ new_derived_fact( Conclusion ):-
     composed_fact( Condition ).
 
 composed_fact( Condition ):-
-    fact( Condition ).
+    fact( Condition ).da
 
 composed_fact( Condition1 and Condition2 ):-
     composed_fact( Condition1 ),
@@ -53,6 +53,7 @@ composed_fact( Condition1 or Condition2 ):-
     composed_fact( Condition1 )
     ;
     composed_fact( Condition2 ).
+
 
 
 go:-
@@ -92,6 +93,7 @@ getletters(Let,[Let|Letters],Nextchar) :-
     get0(Char), 
     getletters(Char,Letters,Nextchar).
 
+
 if koorts then malaria.
 if diarree then darminfectie.
 if jeuk then huidziekte.
@@ -106,9 +108,12 @@ if hoge-koorts and diarree then tyfus.
 if rode-jeukende-plekken and licht-schilferende-huid and jeuk then schimmels.
 if jeukende-huiduitslag and jeuk then mijten.
 if jeukende-rode-pukkels and jeuk then prickly-heat.    
+   
+    
 
 addFacts([]):- forward. 
 
 addFacts([H|List]):- 
     assert(fact(H)), 
     addFacts(List).
+
