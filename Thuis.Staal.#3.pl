@@ -1,3 +1,6 @@
+:- dynamic fact/1.
+
+fact(a).
 
 /* --- Defining operators --- */
 
@@ -56,7 +59,7 @@ composed_fact( Condition1 or Condition2 ):-
 
 
 go:-
-    write( 'Geef 1 van de syntomen die hier beneden staan. Scheid de syntomen met een spatie en eidnig met een punt.' ),
+    write( 'Geef een aantal van de symptomen die hier beneden staan. Scheid de symptomen met een spatie en eindig met een punt.' ),
     nl,
     symptomsSuperclasses(List),
     writeSymptoms(List),
@@ -100,43 +103,86 @@ toAtoms([H|Rest], List):-
     H = X or Y), 
     toAtoms([X,Y|Rest], List).
 
+
 %Superclass staat vooraan
 if koorts or gebeten then malaria.
 if diarree or koorts then darminfectie.
 if jeuk then huidziekte.
-if malaria and hoge-koorts and hoge-pieken then malaria-tertiana.
-if malaria and hoge-koorts and 3-dagen-koorts then malaria-tropica.
-if darminfectie and hoge-koorts and diarree-perdag and hevige-krampen then bacillaire-dysenterie.
-if darminfectie and bloedslijm and diarree and cysten then amoeben-dysenterie. %vraag over diarree 
-if darminfectie and hoge-koorts and diarree then tyfus.
-if huidziekte and rode-jeukende-plekken and licht-schilferende-huid and jeuk then schimmels.
-if huidziekte and jeukende-huiduitslag and jeuk then mijten.
-if huidziekte and jeukende-rode-pukkels and jeuk then prickly-heat.    
+if malaria and hogekoorts and hogepieken then malariatertiana.
+if malaria and hogekoorts and dagenkoorts then malariatropica.
+if darminfectie and hogekoorts and diarreeperdag and hevigekrampen then bacillairedysenterie.
+if darminfectie and bloedslijm and diarree and cysten then amoebendysenterie. %vraag over diarree 
+if darminfectie and hogekoorts and diarree then tyfus.
+if huidziekte and rodejeukendeplekken and lichtschilferendehuid and jeuk then schimmels.
+if huidziekte and jeukendehuiduitslag and jeuk then mijten.
+if huidziekte and jeukenderodepukkels and jeuk then pricklyheat.    
    
-
+% Search all facts and 
 questions:-
     findall(Superclasses, fact(Superclasses), ListFacts),
     checkSuperclasses(ListFacts, ListSups),
-    checkSups(ListSups, Disease),
-    write(Disease).
+    checkSups(ListSups).
 
-checkSups([], _):- fail.
+checkSuperclasses([],[]).
 
-checkSups([H|_], Disease):-
-    askQuestions(H, Disease).
+checkSuperclasses([H|Rest], [H|List]):-
+    sd(H),
+    checkSuperclasses(Rest, List).
 
-checkSups([_|Rest], Disease):-
-    checkSups(Rest, Disease).
+checkSuperclasses([_|Rest], List):-
+    checkSuperclasses(Rest, List).
 
+checkSups([]):- fail.
 
-askQuestions(Superclass, Disease):-
+checkSups([H|_]):-
+    askQuestions(H).
+
+checkSups([_|Rest]):-
+    checkSups(Rest).
+
+askQuestions(Superclass):-
     getDecomposedLists(Superclass, List),
-    checkForSuperclass(Superclass, List, Symps),
-    toAtoms(Symps, Symptoms),
-    writeSymptoms(Symptoms),
+    findDisease(List).
+
+%Vindt een ziekte als het een fact is en deze fact niet als premisse 
+%bekend is maar wel als een goal.
+
+findDisease([]):- fail.
+
+findDisease([H|_]):-
+
+    %Slimme vragen stellen.
+
+    writeSymptoms(H),    
     getsentence(Input),
+    write(Input),
     addFacts(Input),
-    checkForDisease(Disease).
+    checkForDisease.
+
+findDisease([_|List]):-
+    findDisease(List).
+
+checkForDisease:-
+    findall(Facts, fact(Facts), ListOfFacts),
+    searchDisease(ListOfFacts).
+
+searchDisease([H|_]):-
+    if _ then H,
+    findall(Superclass, sd(Superclass), [X,Y,Z]),
+    findall(DecList, getDecomposedLists(X, DecList), A),
+    findall(DecList, getDecomposedLists(Y, DecList), B),
+    findall(DecList, getDecomposedLists(Z, DecList), C),
+    append(A,B,D),
+    append(D,C, AppendableList),
+    flatten(AppendableList, PremiseList),
+    \+ member(H, PremiseList),
+    \+ sd(H),
+    write( 'Je hebt de ziekte : '),
+    write( H ),
+    nl.
+
+searchDisease([_|Rest]):-
+    searchDisease(Rest).
 
 getDecomposedLists(Superclass, DecList):-
     findall(Premises, if Premises then _, List),
@@ -146,16 +192,13 @@ decomposeList(_, [], []).
 
 decomposeList(Superclass, [H|List], [Rest|DecList]):-
     toAtoms([H], [X|Rest]),
-    member(Superclass, [X|Rest]),
+    Superclass == X,
     decomposeList(Superclass, List, DecList).
-
 
 decomposeList(Superclass, [_|List], DecList):-
     decomposeList(Superclass, List, DecList).
 
-
-
-addFacts([]):- forward. 
+addFacts([]):- forward.
 
 addFacts([H|List]):- 
     assert(fact(H)), 
@@ -171,7 +214,6 @@ getrest(46,[]) :-!.
 getrest(32,Input) :-!, 
     getsentence(Input). 
 
-
 getrest(Letter,[Word|Input]) :- 
     getletters(Letter,Letters,Nextchar), 
     name(Word,Letters), 
@@ -184,6 +226,4 @@ getletters(32,[],32):-!.
 getletters(Let,[Let|Letters],Nextchar) :- 
     get0(Char), 
     getletters(Char,Letters,Nextchar).
-
-
 
