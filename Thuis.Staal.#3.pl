@@ -1,26 +1,4 @@
 :- dynamic fact/1.
-
-% Superclass stands in front, if we need all the properties from a refined
-% disease you remove the first propertie and we are left whit all the
-% properties of a disease  
-if koorts or gebeten then malaria.
-if diarree or koorts then darminfectie.
-if jeuk then huidziekte.
-if malaria and hogekoorts and hogepieken then malariatertiana.
-if malaria and hogekoorts and dagenkoorts then malariatropica.
-if darminfectie and hogekoorts and diarreeperdag and hevigekrampen then bacillairedysenterie.
-if darminfectie and bloedslijm and diarree and cysten then amoebendysenterie. %vraag over diarree 
-if darminfectie and hogekoorts and diarree then tyfus.
-if huidziekte and rodejeukendeplekken and lichtschilferendehuid and jeuk then schimmels.
-if huidziekte and jeukendehuiduitslag and jeuk then mijten.
-if huidziekte and jeukenderodepukkels and jeuk then pricklyheat.    
-
-%List all superdiseases to seprate it whit refined disease.
-sd(malaria).
-sd(darminfectie).
-sd(huidziekte).
-
-
 /* --- Defining operators --- */
 
 :- op(800, fx, if).
@@ -76,6 +54,28 @@ composed_fact( Condition1 or Condition2 ):-
     ;
     composed_fact( Condition2 ).
 
+% Superclass stands in front, if we need all the properties from a refined
+% disease you remove the first propertie and we are left whit all the
+% properties of a disease  
+if koorts or gebeten then malaria.
+if diarree or koorts then darminfectie.
+if jeuk then huidziekte.
+if malaria and hogekoorts and hogepieken then malariatertiana.
+if malaria and hogekoorts and dagenkoorts then malariatropica.
+if darminfectie and hogekoorts and diarreeperdag and hevigekrampen then bacillairedysenterie.
+if darminfectie and bloedslijm and diarree and cysten then amoebendysenterie. %vraag over diarree 
+if darminfectie and hogekoorts and diarree then tyfus.
+if huidziekte and rodejeukendeplekken and lichtschilferendehuid and jeuk then schimmels.
+if huidziekte and jeukendehuiduitslag and jeuk then mijten.
+if huidziekte and jeukenderodepukkels and jeuk then pricklyheat.    
+
+%List all superdiseases to seprate it whit refined disease.
+sd(malaria).
+sd(darminfectie).
+sd(huidziekte).
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The main function it doesn't do the data refinement   %
@@ -101,6 +101,7 @@ go:-
 % a list of them.                                        %                                                       
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 symptomsSuperclasses(List):-
     findall(Superclasses, sd(Superclasses), ListSup),
@@ -321,3 +322,41 @@ getletters(Let,[Let|Letters],Nextchar) :-
     get0(Char), 
     getletters(Char,Letters,Nextchar).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ATTENTION ATTENTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Ons huiswerk was bijna klaar totdat wij op dit     %
+% probleem stuiten, waar prolog ons te veel in de weg%
+% zat om dat het niet interface vriendelijk is.      %
+% Het probleem staat hier beneden weer geven. Blijkbaar
+% doet getsentence het goed echter zet bij het vragen%
+% naar symptoms komt er een spatie of een "new line" %
+% teken voor de symptom waar door prolog het niet    %
+% meer kan matchen.  Wij wisten niet hoe we dit      %
+% moesten oplossen, toch willen laten zien dat het   %
+% meer aan prolog ligt dat ons belemmerd             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Geef een aantal van de symptomen die hier beneden staan. Scheid de symptomen met een spatie en eindig met een punt.
+Heb je dit symptoom : koorts
+Heb je dit symptoom : gebeten
+Heb je dit symptoom : diarree
+Heb je dit symptoom : jeuk
+|: koorts.
+[koorts]Derived:malaria
+Derived:darminfectie
+No more facts
+Heb je dit symptoom : hogekoorts
+Heb je dit symptoom : hogepieken
+|: hogekoorts hogepieken.
+[
+hogekoorts,hogepieken]No more facts
+Heb je dit symptoom : hogekoorts
+Heb je dit symptoom : dagenkoorts
+|: 
+?- fact(hogekoorts).
+false.
+
+?- fact(hogepieken).
+true.
