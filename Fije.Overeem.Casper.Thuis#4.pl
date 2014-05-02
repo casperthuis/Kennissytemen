@@ -12,6 +12,7 @@
 % conflicts(vanuit concurrent kijkend).
 % time line laten zien.
 % "a before b" kan backtracken: misschien ergens een cut?
+% Check bij het asserten van X before/after Y dat X en Y wel events zijn.
 
 :- dynamic event/1.
 :- dynamic before/0.
@@ -53,17 +54,23 @@ showAllAfters:-
 	write(List).
 
 go1 :- 
+	assert(event(z)),
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
 	assert(event(d)),
 	assert(event(e)),
 	assert(event(g)),
+	%assert(z before a),
 	assert(a before b),
 	assert(b before c),
 	assert(c before d),
 	assert(g after y),
 	assert(a concurrent e),
+	assert(a concurrent f),
+	assert(a concurrent u),
+	assert(a concurrent i),
+	assert(x concurrent a),	
 	forward.
 
 
@@ -81,6 +88,22 @@ forward :-
 	 transitivity,
 	 reflection,	
 	 checkForInregularities.
+
+makeTimeline:-
+	findall(X, (X before _, not(_ before X)), [H|_]),
+	write(H),
+	writeConcurrents(H).
+
+writeConcurrents(Y):-
+	findall(X, Y concurrent X, List),
+	writeList(List).
+
+writeList([]).
+
+writeList([H|T]):-
+	write(', '),
+	write(H),
+	writeList(T).
 
 
 
