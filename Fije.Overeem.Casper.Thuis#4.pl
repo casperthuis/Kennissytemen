@@ -15,6 +15,7 @@
 % Check bij het asserten van X before/after Y dat X en Y wel events zijn.
 % Wel/niet check op het zijn van een event.
 % 1000x concurrency failcheck
+% We willen ipv legelijst-hackerssolution een proper reflectieve concurrencerelatie.
 
 :- dynamic event/1.
 :- dynamic before/0.
@@ -70,11 +71,13 @@ go1 :-
 	assert(a before b),
 	assert(b before c),
 	assert(c before d),
+	assert(d before p),
 	assert(g after y),
 	assert(a concurrent e),
 	assert(b concurrent q),
 	assert(a concurrent i),
 	assert(x concurrent a),	
+	assert(c concurrent j),
 	forward.
 
 
@@ -107,7 +110,9 @@ makeRestOfTimeline(H):-
 
 writeConcurrents(Y):-
 	findall(X, Y concurrent X, List),
-	select(Y, List, SetList),
+	append([Y], List, List2),
+	list_to_set(List2, List3),
+	select(Y, List3, SetList),
 	writeList(SetList).
 
 writeList([]).
@@ -132,7 +137,8 @@ findBestNextEvent(X, [H|T], Z):-
 checkConcurrence(_, []).
 
 checkConcurrence(X, [H|T]):-
-	X concurrent H,
+	((X concurrent H);
+	(H before X)),
 	checkConcurrence(X, T).
 	
 
