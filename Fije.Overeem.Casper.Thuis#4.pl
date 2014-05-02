@@ -68,11 +68,13 @@ go1 :-
 
 
 go2 :- 
-	assert(event(koe)),
-	assert(event(poes)),
-	assert(koe after poes),
-	assert(poes after aap),
+	assert(event(a)),
+	assert(event(b)),
+	assert(event(c)),
+	assert(a before b),
+	assert(b before c),
 	forward.
+
 
 
 forward :-
@@ -105,8 +107,10 @@ goThroughTwinniesList([]).
 	
 goThroughTwinniesList([H|T]):-
 	H = [X,Y],
-	findall(Z, X before Z, AfterXList),
-	assertAllBefores(Y, AfterXList),
+	findall(Z, X before Z, BeforeList),
+	assertAllBefores(Y, BeforeList),
+	findall(Z, X after Z, AfterList),
+	assertAllAfters(Y, AfterList),
 	goThroughTwinniesList(T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -145,7 +149,8 @@ is_concurrent(X, Z):-
 
 reflection:-
 	changeAftersToBefores,
-	changeBeforesToAfters.
+	changeBeforesToAfters,
+	findAllConcurrents.
 
 transitivity:-
 	findall(X, event(X), EventsList),
@@ -210,6 +215,20 @@ assertAllAfters(Event, [_|List]) :-
 %% to after relations										%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+findAllConcurrents:-
+	findall([X , Y], X concurrent Y, ConcurrentList),
+	addAllConcurrents(ConcurrentList).
+
+addAllConcurrents([]).
+
+addAllConcurrents([H|List]):-
+	H = [X ,Y],
+	\+ Y concurrent X,
+	assert( Y concurrent X),
+	addAllConcurrents(List).
+
+addAllConcurrents([_|List]):-
+	addAllConcurrents(List).
 
 changeBeforesToAfters:-
 	findall([X, Y], X before Y, List),
@@ -279,5 +298,10 @@ checkConcurrent(Event, [H|List]):-
 checkConcurrent(_, _):-
 
 	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.'), fail.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 
