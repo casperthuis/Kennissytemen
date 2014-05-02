@@ -13,6 +13,8 @@
 % time line laten zien.
 % "a before b" kan backtracken: misschien ergens een cut?
 % Check bij het asserten van X before/after Y dat X en Y wel events zijn.
+% Wel/niet check op het zijn van een event.
+% 1000x concurrency failcheck
 
 :- dynamic event/1.
 :- dynamic before/0.
@@ -54,6 +56,7 @@ showAllAfters:-
 	write(List).
 
 go1 :- 
+	reset,
 	assert(event(z)),
 	assert(event(a)),
 	assert(event(b)),
@@ -61,20 +64,23 @@ go1 :-
 	assert(event(d)),
 	assert(event(e)),
 	assert(event(g)),
+	assert(event(u)),
+	assert(event(q)),
 	%assert(z before a),
+	assert(a before d),
 	assert(a before b),
 	assert(b before c),
 	assert(c before d),
 	assert(g after y),
 	assert(a concurrent e),
-	assert(a concurrent f),
-	assert(a concurrent u),
+	assert(b concurrent q),
 	assert(a concurrent i),
 	assert(x concurrent a),	
 	forward.
 
 
 go2 :- 
+	reset,
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
@@ -92,11 +98,19 @@ forward :-
 makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
 	write(H),
-	writeConcurrents(H).
+	makeRestOfTimeline(H).
+
+makeRestOfTimeline(H):-
+	not(H before _).
+
+makeRestOfTimeline(H):-
+	writeConcurrents(H),
+	writeNextEvent(H).
 
 writeConcurrents(Y):-
 	findall(X, Y concurrent X, List),
-	writeList(List).
+	select(Y, List, SetList),
+	writeList(SetList).
 
 writeList([]).
 
@@ -105,6 +119,24 @@ writeList([H|T]):-
 	write(H),
 	writeList(T).
 
+writeNextEvent(X):-
+	write(', '),
+	findall(Y, X before Y, List),
+	findBestNextEvent(X, List, Z),
+	write(Z),
+	makeRestOfTimeline(Z).
+
+findBestNextEvent(X, [H|T], Z):-
+	findall(Y, Y before H, BeforesList),
+	(checkConcurrence(X, BeforesList), Z = H);
+	(findBestNextEvent(X, T, Z)).
+
+checkConcurrence(_, []).
+
+checkConcurrence(X, [H|T]):-
+	X concurrent H,
+	checkConcurrence(X, T).
+	
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -250,8 +282,8 @@ addAllConcurrents([H|List]):-
 	assert( Y concurrent X),
 	\+ X concurrent X,
 	assert( X concurrent X),
-	\+ X concurrent X,
-	assert( X concurrent X),
+	\+ Y concurrent Y,
+	assert( Y concurrent Y),
 	addAllConcurrents(List).
 
 addAllConcurrents([_|List]):-
