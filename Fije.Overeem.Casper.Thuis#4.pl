@@ -11,6 +11,7 @@
 %%% to do list %%%
 % conflicts(vanuit concurrent kijkend).
 % time line laten zien.
+% "a before b" kan backtracken: misschien ergens een cut?
 
 :- dynamic event/1.
 :- dynamic before/0.
@@ -59,7 +60,7 @@ go1 :-
 	assert(c before d),
 	assert(g after y),
 	assert(a concurrent e),
-	foward.
+	forward.
 
 
 go2 :- 
@@ -67,10 +68,10 @@ go2 :-
 	assert(event(poes)),
 	assert(koe after poes),
 	assert(poes after aap),
-	foward.
+	forward.
 
 
-foward :-
+forward :-
 	 transitivity,
 	 changeBeforesToAfters,
 	 checkForInregularities.
@@ -255,5 +256,5 @@ checkConcurrent(Event, [H|List]):-
 checkConcurrent(_, _):-
 	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.').
 
-ff testen
+
 
