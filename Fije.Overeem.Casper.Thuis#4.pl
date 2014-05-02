@@ -35,6 +35,10 @@
 %%%%%%%%% time line should look like a ---> b ---> c %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+showAllEvent:-
+	findall([X],event(X), List),
+	write(List).
+
 showAllBefores:-
 	findall([X,Y],X before Y, List),
 	write(List).
@@ -72,7 +76,7 @@ go2 :-
 
 foward :-
 	 transitivity,
-	 changeBeforesToAfters,
+	 reflection,	
 	 checkForInregularities.
 
 
@@ -137,6 +141,10 @@ is_concurrent(X, Z):-
 %% This predicate activated all the transitif relations of all%
 %% the events that are currently in the knowledge base. %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+reflection:-
+	changeAftersToBefores,
+	changeBeforesToAfters.
 
 transitivity:-
 	findall(X, event(X), EventsList),
@@ -217,6 +225,21 @@ makeAfters([H|T]):-
 makeAfters([_|T]):-
 	makeAfters(T).
 
+changeAftersToBefores:-
+	findall([X, Y], X after Y, List),
+	makeBefores(List).
+
+makeBefores([]).
+
+makeBefores([H|T]):-
+	H = [X, Y],
+	\+ Y before X,
+	assert(Y before X),
+	makeBefores(T).
+
+makeBefores([_|T]):-
+	makeBefores(T).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -230,7 +253,7 @@ checkForCollision([]).
 checkForCollision([H|List]):-
 	findall(Y, H before Y, BeforeList),
 	checkBefores(H, BeforeList),
-	findall(Y, H before Y, ConcurrentList),
+	findall(Y, H concurrent Y, ConcurrentList),
 	checkConcurrent(H , ConcurrentList),
 	checkForCollision(List).
 
@@ -243,17 +266,15 @@ checkBefores(Event, [H|List]):-
 	checkBefores(Event, List).
 
 checkBefores(_, _):-
-	write('the fact you asserted are interferring whit the database, probably a before or after wrong.').
+	write('the fact you asserted are interferring whit the database, probably a before or after wrong.'), fail.
 
 checkConcurrent(_ , []).
 
 checkConcurrent(Event, [H|List]):-
 	\+ Event after H,
-	%\+ Event before H,
+	\+ Event before H,
 	checkConcurrent(Event, List).
 
 checkConcurrent(_, _):-
-	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.').
-
-ff testen
+	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.'), fail.
 
