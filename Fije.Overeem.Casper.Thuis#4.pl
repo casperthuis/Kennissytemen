@@ -255,5 +255,5 @@ checkConcurrent(Event, [H|List]):-
 checkConcurrent(_, _):-
 	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.').
 
-
+ff testen
 
