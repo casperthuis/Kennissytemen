@@ -248,6 +248,10 @@ addAllConcurrents([H|List]):-
 	H = [X ,Y],
 	\+ Y concurrent X,
 	assert( Y concurrent X),
+	\+ X concurrent X,
+	assert( X concurrent X),
+	\+ X concurrent X,
+	assert( X concurrent X),
 	addAllConcurrents(List).
 
 addAllConcurrents([_|List]):-
