@@ -91,30 +91,94 @@ go2 :-
 	assert(b before c),
 	forward.
 
+/*
 
+makeEventList:- 
+	findall(X, event(X), EventList), 
+	putConcurrentsInList(EventList, SortedEventList), 
+	write(SortedEventList). 
 
+putConcurrentsInList([], _). 
+
+putConcurrentsInList([H|T], SortedEventList):- 	
+	findall(X, H concurrent X, SameTimeList), 
+	append(H, SameTimeList, SameTimeList2), 
+	putConcurrentsInList(T, [SameTimeList2|SortedEventList]).
+*/
 forward :-
 	 transitivity,
 	 reflection,	
 	 checkForInregularities.
 
-makeTimeline:-
-	findall(X, (X before _, not(_ before X)), [H|_]),
-	write(H),
-	makeRestOfTimeline(H).
 
-makeRestOfTimeline(H):-
+/*
+makeTimeLine2:-
+	findall(X, event(X), EventList),
+	findall(X before Y, X before Y, RelationList),
+	findTimeLine(EventList, RelationList, TimeList),
+	write(TimeList).
+		
+	%findFirstEvent(EventList, RepresentationList),
+	%removeFirstEventFromEventList(RepresentationList, EventList, NewEventList),
+	%finishTimeLine(NewEventList, RepresentationList),
+	%write(RepresentationList),
+	%write(NewEventList).
+
+findTimeLine([],_,_).
+	
+findTimeLine([Event|EventList], RelationList, TimeList):-
+	not(member(Y before Event,RelationList)),
+	deleteFromRelations(Event, RelationsList, NewRelationList),
+	delete(RelationList, Y before Event, NewRelationList),
+	findTimeLine(EventList, NewRelationList, [[Event]|TimeList]).
+
+findTimeLine([Event|EventList], RelationList, TimeList):-
+	append(Event, EventList, NewEventList),
+	findTimeLine(NewEventList, RelationList, TimeList). 
+	
+deleteFromRelations(Event, RelationsList, NewRelationList):-
+	
+
+
+findFirstEvent([Head|_], [Head]):-
+	Head before _,
+	not(_ before Head).
+
+findFirstEvent([_|EventList], RepresentationList):-
+	findFirstEvent(EventList , RepresentationList).
+
+
+removeFirstEventFromEventList([H|_], EventList, NewEventList):-
+	select(H , EventList, NewEventList).
+
+finishTimeLine(_, []).
+
+finishTimeLine([Head1|EventList], [Head2|RepresentationList]):-
+	Head2 before Head1,
+	not(Head2 before _),
+	finishTimeLine(EventList, [Head1|RepresentationList]).	
+
+*/
+
+makeTimeline(List):-
+	findall(X, (X before _, not(_ before X)), [H|_]),
+	append([], [H], NewList),
+	makeRestOfTimeline(H, NewList).
+
+makeRestOfTimeline(H, _):-
 	not(H before _).
 
-makeRestOfTimeline(H):-
-	writeConcurrents(H),
-	writeNextEvent(H).
+makeRestOfTimeline(H, TimeList):-
+	writeConcurrents(H, TimeList),
+	writeNextEvent(H, TimeList).
 
-writeConcurrents(Y):-
+writeConcurrents(Y, TimeList):-
 	findall(X, Y concurrent X, List),
 	append([Y], List, List2),
 	list_to_set(List2, List3),
 	select(Y, List3, SetList),
+	append(SetList, TimeList, NewTimeList),
+	writeConcurrents(Y, NewTimeList),
 	writeList(SetList).
 
 writeList([]).
@@ -272,7 +336,7 @@ assertAllAfters(Event, [_|List]) :-
 
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% This predicate changes all before relations to after 	%%%
+%% This predicate changes all before relations to after %%%
 %% to after relations										%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -326,6 +390,7 @@ makeBefores([_|T]):-
 	makeBefores(T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -367,6 +432,14 @@ checkConcurrent(_, _):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+point:-
+	write('Enter a point do you want a add before concurrent or after relation? '),
+	read(X),
+	read(Y),
+	read(Z),
+	write(X),
+	write(Y),
+	write(Z),
+	assert(X Y Z).
 
 
