@@ -470,12 +470,43 @@ checkConcurrent(_, _):-
 
 point:-
 	write('Enter a point do you want a add before concurrent or after relation? '),
-	read(X),
-	read(Y),
-	read(Z),
-	write(X),
-	write(Y),
-	write(Z),
-	assert(X Y Z).
+	readln(Input),
+	assertList(Input).
 
+assertList([]).
+
+assertList([H1,H2,H3|Rest]):-
+	checkForClashes([H1,H2,H3|_]),
+	assert
+	((H2 == before,
+	\+  H1 before H3,
+	assert(H1 before H3));
+	(H2 == after,
+	\+ H1 after H3, 
+	assert(H1 after H3));
+	(H2 == concurrent,
+	\+ H1 concurrent H3, 
+	assert(H1 concurrent H3))),
+	assert(event(H1)),
+	assert(event(H3)),
+	assertList(Rest).
+
+
+checkForClashes([H1,H2,H3|_]):-
+	H2 == before,
+	not(H1 after H3),
+	not(H1 concurrent H3),
+	not(H3 concurrent H1).
+
+checkForClashes([H1,H2,H3|_]):-
+	H2 == after,
+	not(H1 before H3),
+	not(H1 concurrent H3),
+	not(H3 concurrent H3).
+ 
+
+checkForClashes([H1,H2,H3|_]):-
+	H2 == concurrent,
+	not(H1 before H3),
+	not(H3 before H1).
 
