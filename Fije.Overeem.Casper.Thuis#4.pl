@@ -107,7 +107,7 @@ i_sort([H|T],Acc,Sorted):-
 
 insert(X,[Y|T],[Y|NT]):- 
 	Y before X,
-	insert(X,T,NT).
+	insert([X],T,NT).
 insert(X,[Y|T],[X,Y|T]):-
 	X before Y.
 	insert(X,[],[X]).
@@ -120,6 +120,8 @@ go2 :-
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
+	assert(event(d)),
+	assert(event(e)),
 	assert(b before a),
 	assert(a before c),
 	assert(c before d),
@@ -171,8 +173,8 @@ writeNextEvent(X):-
 
 findBestNextEvent(X, [H|T], Z):-
 	findall(Y, Y before H, BeforesList),
-	(checkConcurrence(X, BeforesList), Z = H);
-	(findBestNextEvent(X, T, Z)).
+	((checkConcurrence(X, BeforesList), Z = H);
+	(findBestNextEvent(X, T, Z))).
 
 checkConcurrence(_, []).
 
