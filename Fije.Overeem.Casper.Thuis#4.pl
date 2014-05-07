@@ -74,6 +74,7 @@ go1 :-
 	assert(c before d),
 	assert(d before p),
 	assert(g after y),
+	assert(d concurrent y),
 	assert(a concurrent e),
 	assert(b concurrent q),
 	assert(a concurrent i),
@@ -82,13 +83,47 @@ go1 :-
 	forward.
 
 
+
+makeEventList:-
+	findall(X, event(X), EventList),
+	putConcurrentsInList(EventList, SortedEventList),
+	write(SortedEventList).
+
+putConcurrentsInList([], _).
+	
+
+putConcurrentsInList([H|T], [SameTimeList2|Y]):-
+	putConcurrentsInList(T, Y),
+	findall(X, H concurrent X, SameTimeList),
+	append([H], SameTimeList, SameTimeList2).
+
+insert_sort(List,Sorted):-
+	i_sort(List,[],Sorted).
+
+i_sort([],Acc,Acc).
+i_sort([H|T],Acc,Sorted):-
+	insert(H,Acc,NAcc),
+	i_sort(T,NAcc,Sorted).
+
+insert(X,[Y|T],[Y|NT]):- 
+	Y before X,
+	insert(X,T,NT).
+insert(X,[Y|T],[X,Y|T]):-
+	X before Y.
+	insert(X,[],[X]).
+
+	
+
+
 go2 :- 
 	reset,
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-	assert(a before b),
-	assert(b before c),
+	assert(b before a),
+	assert(a before c),
+	assert(c before d),
+	assert(d before e),
 	forward.
 
 
@@ -96,15 +131,17 @@ go2 :-
 forward :-
 	 transitivity,
 	 reflection,	
-	 checkForInregularities.
+	 checkForIrregularities.
 
 makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
+	write('('),
 	write(H),
 	makeRestOfTimeline(H).
 
 makeRestOfTimeline(H):-
-	not(H before _).
+	not(H before _),
+	write(').').
 
 makeRestOfTimeline(H):-
 	writeConcurrents(H),
@@ -117,7 +154,8 @@ writeConcurrents(Y):-
 	select(Y, List3, SetList),
 	writeList(SetList).
 
-writeList([]).
+writeList([]):-
+	write(')').
 
 writeList([H|T]):-
 	write(', '),
@@ -125,9 +163,9 @@ writeList([H|T]):-
 	writeList(T).
 
 writeNextEvent(X):-
-	write(', '),
 	findall(Y, X before Y, List),
 	findBestNextEvent(X, List, Z),
+	write(' -> ('),
 	write(Z),
 	makeRestOfTimeline(Z).
 
@@ -329,7 +367,7 @@ makeBefores([_|T]):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-checkForInregularities:-
+checkForIrregularities:-
 	findall(X, event(X), EventsList),
 	checkForCollision(EventsList).
 
@@ -351,7 +389,7 @@ checkBefores(Event, [H|List]):-
 	checkBefores(Event, List).
 
 checkBefores(_, _):-
-	write('the fact you asserted are interferring whit the database, probably a before or after wrong.'), fail.
+	write('the facts you asserted are interfering with the database, probably a before or after wrong.'), fail.
 
 checkConcurrent(_ , []).
 
@@ -362,7 +400,7 @@ checkConcurrent(Event, [H|List]):-
 
 checkConcurrent(_, _):-
 
-	write('the fact you asserted are interferring whit the database, probably a concurrent wrong.'), fail.
+	write('the facts you asserted are interfering with the database, probably a concurrent wrong.'), fail.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
