@@ -113,7 +113,7 @@ insert(X,[Y|T],[X,Y|T]):-
 	insert(X,[],[X]).
 
 	
-
+%
 
 go2 :- 
 	reset,
@@ -121,10 +121,13 @@ go2 :-
 	assert(event(b)),
 	assert(event(c)),
 	%assert(event(d)),
+	assert(event(e)),
+	assert(event(d)),
 	%assert(event(e)),
 	assert(b before a),
 	assert(c before a),
-	%assert(c before d),
+	assert(b before d),
+	assert(a concurrent e),
 	%assert(d before e),
 	forward.
 
@@ -152,23 +155,48 @@ forward :-
 makeTimeLines(Output):-
 	findall(Events, event(Events), EventList),
 	makeTime(EventList, TempTimeLine),
-	reverse(TempTimeLine,Output),
-	write(Output).
+	reverse(TempTimeLine,Output).
+	%write(Output).
 
-makeTime(Eventlist, Output):-
-	findall(X, (X before _, not(_ before X)), [H|_]),
-	select(H, Eventlist, NewEventList),
+makeTime(EventList, Output):-
+	findall(X, (X before _, not(_ before X)), FirstList),
+	member(H, FirstList),
+	select(H, EventList, NewEventList),
 	append([[H]], [], NewTimeList),
 	makeTimeLine(NewEventList, H,  NewTimeList, Output).
 
 makeTimeLine([], _ ,X, X).
 
 makeTimeLine(EventList, H, TimeList, Output):-
-	findall(X, (not( X before H), member(X, EventList)), PossiblityList),
-	%findall(X,(X after H, member(X,EventList)) , PossiblityList),
+	findall(X, (member(X, EventList), not(X before H)), PossiblityList),
 	member(G, PossiblityList),
 	select(G, EventList, NewEventList),
-	makeTimeLine(NewEventList, G, [[G]|TimeList], Output).
+	%putConcurrencesInList(G, NewEventList, NewerEventList, OutputCon),
+	putEventInList(X, TimeList, NewTimeList),
+	makeTimeLine(NewEventList, G, NewTimeList, Output).
+/* OK JE KRIJGT VET RARE TIMELINES, ZIE EVEN NIET WHY. DOEI CASPER. */
+
+putEventInList(X, [[H|_]|TimeList], NewTimeList):-
+	X concurrent H, 
+	NewTimeList = [[H,X|_]|TimeList].
+
+putEventInList(X, TimeList, [X|TimeList]).
+
+/*
+putConcurrencesInList(X, EventList, NewEventList, Output2):-
+	findall(Y, (member(Y, EventList), not(X after Y), not(Y after X)), PossibilityList),
+	addConcurrences(PossibilityList, EventList, NewEventList, Output1),
+	append([X], Output1, Output2). 
+
+addConcurrences([], X, X, []).
+
+addConcurrences([H|T], EventList, NewerEventList, [H|Output]):-
+	select(H, EventList, NewEventList),
+	addConcurrences(T, NewEventList, NewerEventList, Output).
+
+
+
+*/
 
 
 
@@ -195,25 +223,18 @@ makeTimeLine(EventList, H, TimeList, Output):-
 
 
 
-
-
-
-
-
-
-
-makeTimeLine2:-
-	findall(X, event(X), EventList),
-	findall(X before Y, X before Y, RelationList),
-	findTimeLine(EventList, RelationList, TimeList),
-	write(TimeList).
+%makeTimeLine2:-
+	%findall(X, event(X), EventList),
+	%findall(X before Y, X before Y, RelationList),
+	%findTimeLine(EventList, RelationList, TimeList),
+	%write(TimeList).
 		
 	%findFirstEvent(EventList, RepresentationList),
 	%removeFirstEventFromEventList(RepresentationList, EventList, NewEventList),
 	%finishTimeLine(NewEventList, RepresentationList),
 	%write(RepresentationList),
 	%write(NewEventList).
-
+/*
 findTimeLine([],_,_).
 	
 findTimeLine([Event|EventList], RelationList, TimeList):-
