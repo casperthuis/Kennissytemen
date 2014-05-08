@@ -113,94 +113,113 @@ insert(X,[Y|T],[X,Y|T]):-
 	insert(X,[],[X]).
 
 	
-
-
 go2 :- 
 	reset,
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-	assert(event(d)),
-	assert(event(e)),
-	assert(b before a),
-	assert(a before c),
-	assert(c before d),
-	assert(d before e),
+	%assert(event(d)),
+	%assert(event(e)),
+	assert(a before b),
+	assert(b before c),
+	%assert(c before d),
+	%assert(d before e),
 	forward.
 
-/*
 
-makeEventList:- 
-	findall(X, event(X), EventList), 
-	putConcurrentsInList(EventList, SortedEventList), 
-	write(SortedEventList). 
-
-putConcurrentsInList([], _). 
-
-putConcurrentsInList([H|T], SortedEventList):- 	
-	findall(X, H concurrent X, SameTimeList), 
-	append(H, SameTimeList, SameTimeList2), 
-	putConcurrentsInList(T, [SameTimeList2|SortedEventList]).
-*/
 forward :-
 	 transitivity,
 	 reflection,	
 	 checkForIrregularities.
 
 
-/*
-makeTimeLine2:-
-	findall(X, event(X), EventList),
-	findall(X before Y, X before Y, RelationList),
-	findTimeLine(EventList, RelationList, TimeList),
+makeTimeLines(TimeList):-
+	findall(Events, event(Events), EventList),
+	makeTime(EventList,TimeList),
 	write(TimeList).
-		
-	%findFirstEvent(EventList, RepresentationList),
-	%removeFirstEventFromEventList(RepresentationList, EventList, NewEventList),
-	%finishTimeLine(NewEventList, RepresentationList),
-	%write(RepresentationList),
-	%write(NewEventList).
 
-findTimeLine([],_,_).
-	
-findTimeLine([Event|EventList], RelationList, TimeList):-
-	not(member(Y before Event,RelationList)),
-	deleteFromRelations(Event, RelationsList, NewRelationList),
-	delete(RelationList, Y before Event, NewRelationList),
-	findTimeLine(EventList, NewRelationList, [[Event]|TimeList]).
-
-findTimeLine([Event|EventList], RelationList, TimeList):-
-	append(Event, EventList, NewEventList),
-	findTimeLine(NewEventList, RelationList, TimeList). 
-	
-deleteFromRelations(Event, RelationsList, NewRelationList):-
-	
-
-
-findFirstEvent([Head|_], [Head]):-
-	Head before _,
-	not(_ before Head).
-
-findFirstEvent([_|EventList], RepresentationList):-
-	findFirstEvent(EventList , RepresentationList).
-
-
-removeFirstEventFromEventList([H|_], EventList, NewEventList):-
-	select(H , EventList, NewEventList).
-
-finishTimeLine(_, []).
-
-finishTimeLine([Head1|EventList], [Head2|RepresentationList]):-
-	Head2 before Head1,
-	not(Head2 before _),
-	finishTimeLine(EventList, [Head1|RepresentationList]).	
-
-*/
-
-makeTimeline(List):-
+makeTime(Eventlist,TimeList):-
 	findall(X, (X before _, not(_ before X)), [H|_]),
-	append([], [H], NewList),
-	makeRestOfTimeline(H, NewList).
+	select(H, Eventlist, NewEventList),
+	append([[H]], TimeList, NewTimeList),
+	makeTimeLine(NewEventList, NewTimeList).
+
+makeTimeLine([],_).
+
+makeTimeLine(EventList, [[H]|TimeList]):-
+	findall(X,( not( X before H), member(X,EventList)) , PossiblityList),
+	member(Y, PossiblityList),
+	select(Y, EventList, NewEventList),
+	append([[H]], TimeList, NewTimeList),
+	makeTimeLine(NewEventList, [[Y]|NewTimeList]).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+makeTime([],_).
+
+makeTime(Eventlist, TimeList):-
+	nextEvent(Eventlist, TimeList),
+	makeTime(Eventlist, TimeList).
+
+
+nextEvent([H|Rest],TimeList):-
+	findall(X, (X before _, not(_ before X)), List),
+	allConcurrents(List, TimeList),
+	nextEvent(Rest,TimeList).
+
+allConcurrents([H|_],[ANewEvent2|_]):-
+	findall(X, (H concurrent X, X concurrent H), ANewEvent),
+	list_to_set(ANewEvent, ANewEvent2).
+*/	
+
+
+
+
+
+
+
+
+
+
+
+makeTimeline:-
+	findall(X, (X before _, not(_ before X)), [H|_]),
+	writeFirstEvent(H),
+	makeRestOfTimeline(H).
+
+writeFirstEvent(H):-
+	write('('),
+	write(H).
 
 makeRestOfTimeline(H):-
 	not(H before _),
@@ -215,7 +234,6 @@ writeConcurrents(Y):-
 	append([Y], List, List2),
 	list_to_set(List2, List3),
 	select(Y, List3, SetList),
-	writeConcurrents(Y),
 	writeList(SetList).
 
 writeList([]):-
@@ -318,8 +336,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-	findAllAfters(EventsList),
-	inheritProperties.
+	findAllAfters(EventsList).
+	%inheritProperties.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
@@ -536,10 +554,12 @@ checkForClashes(H1,H2,H3):-
 	write(H3 ), write(' '),
 	write('has been added'),
 	nl.
+
 /*
 checkForClashes(_,_,_):-
 	write('Conflicts has occured').
 */
+
 assertRelation(H1,H2,H3):-
 	((H2 == before,
 	\+  H1 before H3,
