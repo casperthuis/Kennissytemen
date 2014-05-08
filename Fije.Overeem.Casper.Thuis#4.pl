@@ -18,11 +18,11 @@
 % We willen ipv legelijst-hackerssolution een proper reflectieve concurrencerelatie.
 
 :- dynamic event/1.
-:- dynamic before/0.
-:- dynamic after/0.
-:- dynamic concurrent/0.
-:- dynamic beforeOrConcurrent/0.
-:- dynamic afterOrConcurrent/0.
+:- dynamic before/2.
+:- dynamic after/2.
+:- dynamic concurrent/2.
+:- dynamic beforeOrConcurrent/2.
+:- dynamic afterOrConcurrent/2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%% defining operaters %%%%%%%%%%%%%%%%%%%%%%
@@ -473,13 +473,63 @@ checkConcurrent(_, _):-
 point:-
 	write('Enter a point do you want a add before concurrent or after relation? '),
 	readln(Input),
+	assertList(Input),
+	foward.
+/*
+whatOption(Input):-
+	(input == stop,
+	fail);
 	assertList(Input).
-
+*/
 assertList([]).
 
 assertList([H1,H2,H3|Rest]):-
-	checkForClashes([H1,H2,H3|_]),
-	assert
+	checkForClashes(H1,H2,H3),
+	assertRelation(H1,H2,H3),
+	assertEvents([H1,H3]),
+	nl,
+	assertList(Rest).
+
+checkForClashes(H1,H2,H3):-
+	H2 == before,
+	not(H1 after H3),
+	not(H1 concurrent H3),
+	not(H3 concurrent H1),
+	write('Relation'), write(' '),
+	write(H1 ), write(' '),
+	write(H2 ), write(' '),
+	write(H3 ), write(' '),
+	write('has been added'),
+	nl.
+
+checkForClashes(H1,H2,H3):-
+	H2 == after,
+	not(H1 before H3),
+	not(H1 concurrent H3),
+	not(H3 concurrent H3),
+	write('Relation'), write(' '),
+	write(H1 ), write(' '),
+	write(H2 ), write(' '),
+	write(H3 ), write(' '),
+	write('has been added'),
+	nl.
+ 
+
+checkForClashes(H1,H2,H3):-
+	H2 == concurrent,
+	not(H1 before H3),
+	not(H3 before H1),
+	write('Relation'), write(' '),
+	write(H1 ), write(' '),
+	write(H2 ), write(' '),
+	write(H3 ), write(' '),
+	write('has been added'),
+	nl.
+/*
+checkForClashes(_,_,_):-
+	write('Conflicts has occured').
+*/
+assertRelation(H1,H2,H3):-
 	((H2 == before,
 	\+  H1 before H3,
 	assert(H1 before H3));
@@ -488,27 +538,27 @@ assertList([H1,H2,H3|Rest]):-
 	assert(H1 after H3));
 	(H2 == concurrent,
 	\+ H1 concurrent H3, 
-	assert(H1 concurrent H3))),
-	assert(event(H1)),
-	assert(event(H3)),
-	assertList(Rest).
+	assert(H1 concurrent H3))).
 
 
-checkForClashes([H1,H2,H3|_]):-
-	H2 == before,
-	not(H1 after H3),
-	not(H1 concurrent H3),
-	not(H3 concurrent H1).
+assertEvents([]).
 
-checkForClashes([H1,H2,H3|_]):-
-	H2 == after,
-	not(H1 before H3),
-	not(H1 concurrent H3),
-	not(H3 concurrent H3).
- 
+assertEvents([H|T]):-
+	\+ event(H),
+	assert(event(H)),
+	write('Event asserted: '),
+	write(H),
+	nl,
+	assertList(T).
 
-checkForClashes([H1,H2,H3|_]):-
-	H2 == concurrent,
-	not(H1 before H3),
-	not(H3 before H1).
+assertEvents([H|T]):-
+	write('Event already exist: '),
+	write(H),
+	nl,
+	assertEvents(T).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
