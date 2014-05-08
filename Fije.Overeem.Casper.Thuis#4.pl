@@ -148,7 +148,60 @@ forward :-
 	 checkForIrregularities.
 
 
-/*
+
+makeTimeLines(Output):-
+	findall(Events, event(Events), EventList),
+	makeTime(EventList, TempTimeLine),
+	reverse(TempTimeLine,Output),
+	write(Output).
+
+makeTime(Eventlist, Output):-
+	findall(X, (X before _, not(_ before X)), [H|_]),
+	select(H, Eventlist, NewEventList),
+	append([[H]], [], NewTimeList),
+	makeTimeLine(NewEventList, H,  NewTimeList, Output).
+
+makeTimeLine([], _ ,X, X).
+
+makeTimeLine(EventList, H, TimeList, Output):-
+	findall(X, (not( X before H), member(X, EventList)), PossiblityList),
+	%findall(X,(X after H, member(X,EventList)) , PossiblityList),
+	member(G, PossiblityList),
+	select(G, EventList, NewEventList),
+	makeTimeLine(NewEventList, G, [[G]|TimeList], Output).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 makeTimeLine2:-
 	findall(X, event(X), EventList),
 	findall(X before Y, X before Y, RelationList),
