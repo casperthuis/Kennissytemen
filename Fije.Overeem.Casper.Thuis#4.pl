@@ -320,7 +320,8 @@ findAllConcurrents:-
 	findall([X , Y], X concurrent Y, ConcurrentList),
 	addAllConcurrents(ConcurrentList).
 
-addAllConcurrents([]).
+addAllConcurrents([]):-
+	makeEventsReflective.
 
 addAllConcurrents([H|List]):-
 	H = [X ,Y],
@@ -334,6 +335,16 @@ addAllConcurrents([H|List]):-
 
 addAllConcurrents([_|List]):-
 	addAllConcurrents(List).
+
+makeEventsReflective:-
+	findall(X, ((X before _);(_ before X)), EventList),
+	assertAllReflectiveConcurrents(EventList).
+
+assertAllReflectiveConcurrents([]).
+
+assertAllReflectiveConcurrents([H|T]):-
+	assert(H concurrent H),
+	assertAllReflectiveConcurrents(T).
 
 changeBeforesToAfters:-
 	findall([X, Y], X before Y, List),
