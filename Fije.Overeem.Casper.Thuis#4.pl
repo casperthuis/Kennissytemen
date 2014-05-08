@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Prolog Homework #2014 %%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%% 12 - 02 - 2014	%%%%%%%%%%%%%%%%%%%%%%%%	
+%%%%%%%%%%%%%%%%%%%%%%%% 08 - 05 - 2014	%%%%%%%%%%%%%%%%%%%%%%%%	
 %%%%%%%% Casper Thuis, 10341943, casper.thuis@hotmail.com	%%%%
 %%%%%%%% Fije van Overeem, 10373535, fije@hotmail.com	%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,12 +120,12 @@ go2 :-
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-	assert(event(d)),
-	assert(event(e)),
+	%assert(event(d)),
+	%assert(event(e)),
 	assert(b before a),
-	assert(a before c),
-	assert(c before d),
-	assert(d before e),
+	assert(c before a),
+	%assert(c before d),
+	%assert(d before e),
 	forward.
 
 /*
@@ -197,26 +197,25 @@ finishTimeLine([Head1|EventList], [Head2|RepresentationList]):-
 
 */
 
-makeTimeline(List):-
+makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
 	append([], [H], NewList),
 	makeRestOfTimeline(H, NewList).
 
-makeRestOfTimeline(H):-
+makeRestOfTimeline(H,TimeList):-
 	not(H before _),
-	write(').').
+	writeList(TimeList).
 
-makeRestOfTimeline(H):-
-	writeConcurrents(H),
-	writeNextEvent(H).
+makeRestOfTimeline(H, TimeList):-
+	writeConcurrents(H, TimeList, NewTimeList),
+	writeNextEvent(H, NewTimeList).
 
-writeConcurrents(Y):-
+writeConcurrents(Y, TimeList, NewTimeList):-
 	findall(X, Y concurrent X, List),
 	append([Y], List, List2),
 	list_to_set(List2, List3),
 	select(Y, List3, SetList),
-	writeConcurrents(Y),
-	writeList(SetList).
+	append(SetList, TimeList, NewTimeList).
 
 writeList([]):-
 	write(')').
@@ -226,12 +225,11 @@ writeList([H|T]):-
 	write(H),
 	writeList(T).
 
-writeNextEvent(X):-
+writeNextEvent(X, TimeList):-
 	findall(Y, X before Y, List),
 	findBestNextEvent(X, List, Z),
-	write(' -> ('),
-	write(Z),
-	makeRestOfTimeline(Z).
+	append([Z], TimeList, NewTimeList),
+	makeRestOfTimeline(Z, NewTimeList).
 
 findBestNextEvent(X, [H|T], Z):-
 	findall(Y, Y before H, BeforesList),
@@ -318,8 +316,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-	findAllAfters(EventsList),
-	inheritProperties.
+	findAllAfters(EventsList).
+	%inheritProperties.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
@@ -399,7 +397,7 @@ addAllConcurrents([_|List]):-
 	addAllConcurrents(List).
 
 makeEventsReflective:-
-	findall(X, ((X before _);(_ before X)), EventList),
+	setof(X, ((X before _);(_ before X)), EventList),
 	assertAllReflectiveConcurrents(EventList).
 
 assertAllReflectiveConcurrents([]).
