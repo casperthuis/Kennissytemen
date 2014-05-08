@@ -1,11 +1,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Prolog Homework #2014 %%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%% 12 - 02 - 2014	%%%%%%%%%%%%%%%%%%%%%%%%	
-%%%%%%%% Casper Thuis, 10341943, casper.thuis@hotmail.com	%%%%
+%%%%%%%%%%%%%%%%%%%%%%%% 09 - 05 - 2014	%%%%%%%%%%%%%%%%%%%%%%%%	
+%%%%%%%% Casper Thuis, 10341943, casper.thuis@hotmail.com   %%%%
 %%%%%%%% Fije van Overeem, 10373535, fije@hotmail.com	%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%	Assingment 1 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%	Assignment 4 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% to do list %%%
@@ -113,6 +113,8 @@ insert(X,[Y|T],[X,Y|T]):-
 	insert(X,[],[X]).
 
 	
+
+
 go2 :- 
 	reset,
 	assert(event(a)),
@@ -120,18 +122,37 @@ go2 :-
 	assert(event(c)),
 	assert(event(d)),
 	%assert(event(e)),
+<<<<<<< HEAD
 	assert(a before b),
 	assert(b before c),
 	assert(c before d),
+=======
+	assert(b before a),
+	assert(c before a),
+>>>>>>> 83e42f5a2016fbe8f6bcf4211a95b1b96df0a4ea
 	%assert(c before d),
 	%assert(d before e),
 	forward.
 
+/*
 
+makeEventList:- 
+	findall(X, event(X), EventList), 
+	putConcurrentsInList(EventList, SortedEventList), 
+	write(SortedEventList). 
+
+putConcurrentsInList([], _). 
+
+putConcurrentsInList([H|T], SortedEventList):- 	
+	findall(X, H concurrent X, SameTimeList), 
+	append(H, SameTimeList, SameTimeList2), 
+	putConcurrentsInList(T, [SameTimeList2|SortedEventList]).
+*/
 forward :-
 	 transitivity,
 	 reflection,	
 	 checkForIrregularities.
+
 
 
 makeTimeLines(Output):-
@@ -187,57 +208,74 @@ makeTimeLine(EventList, H, TimeList, Output):-
 
 
 
-/*
-makeTime([],_).
 
-makeTime(Eventlist, TimeList):-
-	nextEvent(Eventlist, TimeList),
-	makeTime(Eventlist, TimeList).
+makeTimeLine2:-
+	findall(X, event(X), EventList),
+	findall(X before Y, X before Y, RelationList),
+	findTimeLine(EventList, RelationList, TimeList),
+	write(TimeList).
+		
+	%findFirstEvent(EventList, RepresentationList),
+	%removeFirstEventFromEventList(RepresentationList, EventList, NewEventList),
+	%finishTimeLine(NewEventList, RepresentationList),
+	%write(RepresentationList),
+	%write(NewEventList).
+
+findTimeLine([],_,_).
+	
+findTimeLine([Event|EventList], RelationList, TimeList):-
+	not(member(Y before Event,RelationList)),
+	deleteFromRelations(Event, RelationsList, NewRelationList),
+	delete(RelationList, Y before Event, NewRelationList),
+	findTimeLine(EventList, NewRelationList, [[Event]|TimeList]).
+
+findTimeLine([Event|EventList], RelationList, TimeList):-
+	append(Event, EventList, NewEventList),
+	findTimeLine(NewEventList, RelationList, TimeList). 
+	
+deleteFromRelations(Event, RelationsList, NewRelationList):-
+	
 
 
-nextEvent([H|Rest],TimeList):-
-	findall(X, (X before _, not(_ before X)), List),
-	allConcurrents(List, TimeList),
-	nextEvent(Rest,TimeList).
+findFirstEvent([Head|_], [Head]):-
+	Head before _,
+	not(_ before Head).
 
-allConcurrents([H|_],[ANewEvent2|_]):-
-	findall(X, (H concurrent X, X concurrent H), ANewEvent),
-	list_to_set(ANewEvent, ANewEvent2).
-*/	
+findFirstEvent([_|EventList], RepresentationList):-
+	findFirstEvent(EventList , RepresentationList).
 
 
+removeFirstEventFromEventList([H|_], EventList, NewEventList):-
+	select(H , EventList, NewEventList).
 
+finishTimeLine(_, []).
 
+finishTimeLine([Head1|EventList], [Head2|RepresentationList]):-
+	Head2 before Head1,
+	not(Head2 before _),
+	finishTimeLine(EventList, [Head1|RepresentationList]).	
 
-
-
-
-
-
+*/
 
 makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
-	writeFirstEvent(H),
-	makeRestOfTimeline(H).
+	append([], [H], NewList),
+	makeRestOfTimeline(H, NewList).
 
-writeFirstEvent(H):-
-	write('('),
-	write(H).
-
-makeRestOfTimeline(H):-
+makeRestOfTimeline(H,TimeList):-
 	not(H before _),
-	write(').').
+	writeList(TimeList).
 
-makeRestOfTimeline(H):-
-	writeConcurrents(H),
-	writeNextEvent(H).
+makeRestOfTimeline(H, TimeList):-
+	writeConcurrents(H, TimeList, NewTimeList),
+	writeNextEvent(H, NewTimeList).
 
-writeConcurrents(Y):-
+writeConcurrents(Y, TimeList, NewTimeList):-
 	findall(X, Y concurrent X, List),
 	append([Y], List, List2),
 	list_to_set(List2, List3),
 	select(Y, List3, SetList),
-	writeList(SetList).
+	append(SetList, TimeList, NewTimeList).
 
 writeList([]):-
 	write(')').
@@ -247,12 +285,11 @@ writeList([H|T]):-
 	write(H),
 	writeList(T).
 
-writeNextEvent(X):-
+writeNextEvent(X, TimeList):-
 	findall(Y, X before Y, List),
 	findBestNextEvent(X, List, Z),
-	write(' -> ('),
-	write(Z),
-	makeRestOfTimeline(Z).
+	append([Z], TimeList, NewTimeList),
+	makeRestOfTimeline(Z, NewTimeList).
 
 findBestNextEvent(X, [H|T], Z):-
 	findall(Y, Y before H, BeforesList),
@@ -420,7 +457,7 @@ addAllConcurrents([_|List]):-
 	addAllConcurrents(List).
 
 makeEventsReflective:-
-	findall(X, ((X before _);(_ before X)), EventList),
+	setof(X, ((X before _);(_ before X)), EventList),
 	assertAllReflectiveConcurrents(EventList).
 
 assertAllReflectiveConcurrents([]).
@@ -557,12 +594,10 @@ checkForClashes(H1,H2,H3):-
 	write(H3 ), write(' '),
 	write('has been added'),
 	nl.
-
 /*
 checkForClashes(_,_,_):-
 	write('Conflicts has occured').
 */
-
 assertRelation(H1,H2,H3):-
 	((H2 == before,
 	\+  H1 before H3,
