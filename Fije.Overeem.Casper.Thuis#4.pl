@@ -118,10 +118,11 @@ go2 :-
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-	%assert(event(d)),
+	assert(event(d)),
 	%assert(event(e)),
 	assert(a before b),
 	assert(b before c),
+	assert(c before d),
 	%assert(c before d),
 	%assert(d before e),
 	forward.
@@ -148,12 +149,13 @@ makeTime(Eventlist, Output):-
 makeTimeLine([], _ ,X, X).
 
 makeTimeLine(EventList, H, TimeList, Output):-
-	findall(X, (not( X before H), member(X, EventList)), PossiblityList),
+	findall(X, (\+( X before H), member(X, EventList)), PossiblityList),
 	%findall(X,(X after H, member(X,EventList)) , PossiblityList),
 	member(G, PossiblityList),
 	select(G, EventList, NewEventList),
 	makeTimeLine(NewEventList, G, [[G]|TimeList], Output).
 
+%makeTimeLine(Eventlist, H, TimeList, Output):-
 
 
 
