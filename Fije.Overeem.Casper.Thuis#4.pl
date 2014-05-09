@@ -122,32 +122,13 @@ go2 :-
 	assert(event(c)),
 	assert(event(d)),
 	%assert(event(e)),
-<<<<<<< HEAD
 	assert(a before b),
 	assert(b before c),
 	assert(c before d),
-=======
-	assert(b before a),
-	assert(c before a),
->>>>>>> 83e42f5a2016fbe8f6bcf4211a95b1b96df0a4ea
 	%assert(c before d),
 	%assert(d before e),
 	forward.
 
-/*
-
-makeEventList:- 
-	findall(X, event(X), EventList), 
-	putConcurrentsInList(EventList, SortedEventList), 
-	write(SortedEventList). 
-
-putConcurrentsInList([], _). 
-
-putConcurrentsInList([H|T], SortedEventList):- 	
-	findall(X, H concurrent X, SameTimeList), 
-	append(H, SameTimeList, SameTimeList2), 
-	putConcurrentsInList(T, [SameTimeList2|SortedEventList]).
-*/
 forward :-
 	 transitivity,
 	 reflection,	
@@ -169,26 +150,24 @@ makeTime(Eventlist, Output):-
 
 makeTimeLine([], _ ,X, X).
 
-makeTimeLine(EventList, H, TimeList, Output):-
-	findall(X, (\+( X before H), member(X, EventList)), PossiblityList),
-	%findall(X,(X after H, member(X,EventList)) , PossiblityList),
-	member(G, PossiblityList),
+
+makeTimeLine(EventList, H, TimeList, Output):- 
+	findall(X, (member(X, EventList), not(X before H)), PossiblityList), 
+	member(G, PossiblityList), 
 	select(G, EventList, NewEventList),
-	makeTimeLine(NewEventList, G, [[G]|TimeList], Output).
+	putConcurrencesInList(G, NewEventList, NewerEventList, OutputCon), 
+	makeTimeLine(NewerEventList, G, [OutputCon|TimeList], Output). 
 
-%makeTimeLine(Eventlist, H, TimeList, Output):-
+putConcurrencesInList(X, EventList, NewEventList, Output2):- 
+	findall(Y, (member(Y, EventList), not(X after Y), not(Y after X)), PossibilityList), 
+	addConcurrences(PossibilityList, EventList, NewEventList, Output1), 
+	append([X], Output1, Output2). 
 
+addConcurrences([], X, X, []). 
 
-
-
-
-
-
-
-
-
-
-
+addConcurrences([H|T], EventList, NewerEventList, [H|Output]):- 
+	select(H, EventList, NewEventList), 
+	addConcurrences(T, NewEventList, NewerEventList, Output).
 
 
 
@@ -204,58 +183,6 @@ makeTimeLine(EventList, H, TimeList, Output):-
 
 
 
-
-
-
-
-
-makeTimeLine2:-
-	findall(X, event(X), EventList),
-	findall(X before Y, X before Y, RelationList),
-	findTimeLine(EventList, RelationList, TimeList),
-	write(TimeList).
-		
-	%findFirstEvent(EventList, RepresentationList),
-	%removeFirstEventFromEventList(RepresentationList, EventList, NewEventList),
-	%finishTimeLine(NewEventList, RepresentationList),
-	%write(RepresentationList),
-	%write(NewEventList).
-
-findTimeLine([],_,_).
-	
-findTimeLine([Event|EventList], RelationList, TimeList):-
-	not(member(Y before Event,RelationList)),
-	deleteFromRelations(Event, RelationsList, NewRelationList),
-	delete(RelationList, Y before Event, NewRelationList),
-	findTimeLine(EventList, NewRelationList, [[Event]|TimeList]).
-
-findTimeLine([Event|EventList], RelationList, TimeList):-
-	append(Event, EventList, NewEventList),
-	findTimeLine(NewEventList, RelationList, TimeList). 
-	
-deleteFromRelations(Event, RelationsList, NewRelationList):-
-	
-
-
-findFirstEvent([Head|_], [Head]):-
-	Head before _,
-	not(_ before Head).
-
-findFirstEvent([_|EventList], RepresentationList):-
-	findFirstEvent(EventList , RepresentationList).
-
-
-removeFirstEventFromEventList([H|_], EventList, NewEventList):-
-	select(H , EventList, NewEventList).
-
-finishTimeLine(_, []).
-
-finishTimeLine([Head1|EventList], [Head2|RepresentationList]):-
-	Head2 before Head1,
-	not(Head2 before _),
-	finishTimeLine(EventList, [Head1|RepresentationList]).	
-
-*/
 
 makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
