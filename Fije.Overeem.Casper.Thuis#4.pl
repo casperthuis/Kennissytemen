@@ -122,11 +122,9 @@ go2 :-
 	assert(event(c)),
 	%assert(event(d)),
 	assert(event(e)),
-	assert(event(d)),
-	%assert(event(e)),
 	assert(b before a),
 	assert(c before a),
-	assert(b before d),
+	%assert(b before d),
 	assert(a concurrent e),
 	%assert(d before e),
 	forward.
@@ -172,15 +170,23 @@ makeTimeLine(EventList, H, TimeList, Output):-
 	member(G, PossiblityList),
 	select(G, EventList, NewEventList),
 	%putConcurrencesInList(G, NewEventList, NewerEventList, OutputCon),
-	putEventInList(X, TimeList, NewTimeList),
+	putEventInList(G, TimeList, NewTimeList),
 	makeTimeLine(NewEventList, G, NewTimeList, Output).
-/* OK JE KRIJGT VET RARE TIMELINES, ZIE EVEN NIET WHY. DOEI CASPER. */
 
-putEventInList(X, [[H|_]|TimeList], NewTimeList):-
-	X concurrent H, 
-	NewTimeList = [[H,X|_]|TimeList].
 
-putEventInList(X, TimeList, [X|TimeList]).
+putEventInList(X, [[H|T]|TimeList], [[H,X|T]|TimeList]):-
+	not(H before X),
+	X concurrent H, !.
+
+putEventInList(X, [[H|T]|TimeList], [[X],[H|T]|TimeList]):-
+	not(X concurrent H),
+	H before X, !. 
+
+putEventInList(X, [[H|T]|TimeList], NewEventList):-
+	not(X concurrent H),
+	not(H before X),
+	((NewEventList = [[X,H|T]|TimeList]);
+	(NewEventList = [[X],[H|T]|TimeList])),!.
 
 /*
 putConcurrencesInList(X, EventList, NewEventList, Output2):-
@@ -335,7 +341,7 @@ reset :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 inheritProperties:-
-	findall([X, Y], is_concurrent(X, Y), TwinniesList),
+	setof([X, Y], is_concurrent(X, Y), TwinniesList),
 	goThroughTwinniesList(TwinniesList).
 
 goThroughTwinniesList([]).
@@ -369,7 +375,9 @@ is_after(X , Z) :-
 	is_after(Y , Z).
 
 is_concurrent(X, Y):-
-	X concurrent Y;
+	X concurrent Y.
+
+is_concurrent(X, Y):-
 	Y concurrent X.
 
 is_concurrent(X, Z):-
@@ -390,8 +398,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-	findAllAfters(EventsList).
-	%inheritProperties.
+	findAllAfters(EventsList),
+	inheritProperties.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
