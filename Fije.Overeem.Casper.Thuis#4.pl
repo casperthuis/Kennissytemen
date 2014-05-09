@@ -121,10 +121,13 @@ go2 :-
 	assert(event(b)),
 	assert(event(c)),
 	assert(event(e)),
+<<<<<<< HEAD
 	assert(event(d)),
+=======
+>>>>>>> f237c55f3a81d24369d8634fbd2946bfe76dde31
 	assert(b before a),
 	assert(c before a),
-	assert(b before d),
+	%assert(b before d),
 	assert(a concurrent e),
 	%assert(d before e),
 	forward.
@@ -156,17 +159,23 @@ makeTimeLine(EventList, H, TimeList, Output):-
 	member(G, PossiblityList),
 	select(G, EventList, NewEventList),
 	%putConcurrencesInList(G, NewEventList, NewerEventList, OutputCon),
-	putEventInList(X, TimeList, NewTimeList),
+	putEventInList(G, TimeList, NewTimeList),
 	makeTimeLine(NewEventList, G, NewTimeList, Output).
-/* OK JE KRIJGT VET RARE TIMELINES, ZIE EVEN NIET WHY. DOEI CASPER. */
 
-/*
-putEventInList(X, [[H|_]|TimeList], NewTimeList):-
-	X concurrent H, 
-	NewTimeList = [[H,X|_]|TimeList].
 
-putEventInList(X, TimeList, [X|TimeList]).
-*/
+putEventInList(X, [[H|T]|TimeList], [[H,X|T]|TimeList]):-
+	not(H before X),
+	X concurrent H, !.
+
+putEventInList(X, [[H|T]|TimeList], [[X],[H|T]|TimeList]):-
+	not(X concurrent H),
+	H before X, !. 
+
+putEventInList(X, [[H|T]|TimeList], NewEventList):-
+	not(X concurrent H),
+	not(H before X),
+	((NewEventList = [[X,H|T]|TimeList]);
+	(NewEventList = [[X],[H|T]|TimeList])),!.
 
 putConcurrencesInList(X, EventList, NewEventList, Output2):-
 	findall(Y, (member(Y, EventList), not(X after Y), not(Y after X)), PossibilityList),
@@ -186,43 +195,6 @@ addConcurrences([H|T], EventList, NewerEventList, [H|Output]):-
 
 
 
-
-
-
-
-
-
-
-/*
-makeTimeLine(EventList, H, TimeList, Output):- 
-	findall(X, (member(X, EventList), not(X before H)), PossiblityList), 
-	member(G, PossiblityList), 
-	select(G, EventList, NewEventList),
-	putConcurrencesInList(G, NewEventList, NewerEventList, OutputCon), 
-	makeTimeLine(NewerEventList, G, [OutputCon|TimeList], Output). 
-
-putConcurrencesInList(X, EventList, NewEventList, Output2):- 
-	findall(Y, (member(Y, EventList), not(X after Y), not(Y after X)), PossibilityList), 
-	addConcurrences(PossibilityList, EventList, NewEventList, Output1), 
-	append([X], Output1, Output2). 
-
-addConcurrences([], X, X, []). 
-
-addConcurrences([H|T], EventList, NewerEventList, [H|Output]):- 
-	select(H, EventList, NewEventList), 
-	addConcurrences(T, NewEventList, NewerEventList, Output).
-*/
-
-
-
-
-
-
-
-
-
-
-	
 
 
 
@@ -293,7 +265,7 @@ reset :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 inheritProperties:-
-	findall([X, Y], is_concurrent(X, Y), TwinniesList),
+	setof([X, Y], is_concurrent(X, Y), TwinniesList),
 	goThroughTwinniesList(TwinniesList).
 
 goThroughTwinniesList([]).
@@ -328,7 +300,13 @@ is_after(X , Z) :-
 
 is_concurrent(X, Y):-
 	X concurrent Y.
+<<<<<<< HEAD
 	%Y concurrent X.
+=======
+
+is_concurrent(X, Y):-
+	Y concurrent X.
+>>>>>>> f237c55f3a81d24369d8634fbd2946bfe76dde31
 
 is_concurrent(X, Z):-
 	X concurrent Y,
@@ -348,8 +326,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-	findAllAfters(EventsList).
-	%inheritProperties.
+	findAllAfters(EventsList),
+	inheritProperties.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
