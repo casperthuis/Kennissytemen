@@ -104,7 +104,7 @@ go2 :-
 	assert(c before a),
 	assert(d before b),
 	assert(a concurrent e),
-	%assert(d before e),
+
 	forward.
 
 forward :-
@@ -119,7 +119,7 @@ forward :-
 %% not concurrent whit that event. After this it put the event
 %% in the list either in the next in the event or after the event.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+/*
 makeTimeLines:-
 	setof(X, makeTimeLines(X), List),
 	writeTimeLine(List).
@@ -130,6 +130,27 @@ writeTimeLine([_|T]):-
 	write(T),
 	nl,
 	writeTimeLine(T).
+*/
+
+
+
+makePossibleTimeLines:-
+	setof(Timeline, makeTimeLines(Timeline), Timelines),
+	writeOutTimelines(Timelines).
+
+writeOutTimelines([]):-
+	write('_______________').
+writeOutTimelines([H|T]):-
+	writeOutTimeline(H),nl,
+	writeOutTimelines(T).
+
+writeOutTimeline([]):-
+	write('End').
+writeOutTimeline([H|T]):-
+	write(H),
+	write('--->'),
+	writeOutTimeline(T).
+
 
 makeTimeLines(Output):-
 	findall(Events, event(Events), EventList),
@@ -152,8 +173,6 @@ makeTimeLine(EventList, H, TimeList, Output):-
 	select(G, EventList, NewEventList),
 	putEventInList(G, TimeList, NewTimeList),
 	makeTimeLine(NewEventList, G, NewTimeList, Output).
-
-
 
 
 
@@ -181,8 +200,6 @@ addConcurrences([], X, X, []).
 addConcurrences([H|T], EventList, NewerEventList, [H|Output]):-
 	select(H, EventList, NewEventList),
 	addConcurrences(T, NewEventList, NewerEventList, Output).
-
-
 
 
 
@@ -232,8 +249,7 @@ checkConcurrence(X, [H|T]):-
 	((X concurrent H);
 	(H before X)),
 	checkConcurrence(X, T).
-	
-*/
+*/	
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% retracts all the events and rules in the knowledge base %%%%
@@ -317,7 +333,6 @@ is_concurrent(X, Z):-
 	X concurrent Y,
 	is_concurrent(Y, Z),!.
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate activated all the transitif relations of all%
 %% the events that are currently in the knowledge base. %%%%%%%
@@ -335,7 +350,6 @@ transitivity:-
 	inheritProperties,
 	changeAftersToBefores,
 	changeBeforesToAfters.
-	
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
@@ -370,7 +384,6 @@ findAllAfters([H|EventsList]) :-
 assertAllBefores(_, []).
 
 assertAllBefores(Event, [H|List]) :-
-	\+ Event before H,
 	assert(Event before H),
 	assert(H after Event),
 	assertAllBefores(Event, List).
@@ -381,7 +394,6 @@ assertAllBefores(Event, [_|List]) :-
 assertAllAfters(_, []).
 
 assertAllAfters(Event, [H|List]) :-
-	\+ Event after H,
 	assert(Event after H),
 	assert(H before Event),
 	assertAllAfters(Event, List).
@@ -492,16 +504,21 @@ checkConcurrent(_, _):-
 %% by one. It check for clashes whit current facts in the data-
 %% base in the current database. If the fact clash the point 
 %% it fails. if it doenst fail it add the fact to the database 
-%% and adds the event if needs be.
+%% and adds the event if needs be. To use point you can give a
+%% list like this "a before b b before c c before d" whitout point or
+%% comma's and then it will add all events.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 point:-
-	write('Enter a point do you want a add before concurrent or after relation? '),
+	write('Enter a point do you want a add before concurrent or after relation '), nl,
+	write('To enter a relation you need to give a long line of relations:'), nl,
+	write('for example input: "a before b b before c a after e" no point needed'),nl,
+	write('If the function returns false your facts we re not admissable or not understandable'),nl,
 	readln(Input),
 	assertList(Input),
-	foward,
-	makeTimeLines.
+	forward,
+	makePossibleTimeLines.
 
 assertList([]).
 
