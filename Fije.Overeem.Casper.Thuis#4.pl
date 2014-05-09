@@ -36,7 +36,7 @@
 
 %['Fije.Overeem.Casper.Thuis#4.pl'].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%% Assingment 1 %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%% Assignment 1 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% time line should look like a ---> b ---> c %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -82,7 +82,7 @@ go1 :-
 	assert(c concurrent j),
 	forward.
 
-
+/*
 
 makeEventList:-
 	findall(X, event(X), EventList),
@@ -111,23 +111,18 @@ insert(X,[Y|T],[Y|NT]):-
 insert(X,[Y|T],[X,Y|T]):-
 	X before Y.
 	insert(X,[],[X]).
-
 	
-%
-
+*/
 go2 :- 
 	reset,
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-	assert(event(e)),
-<<<<<<< HEAD
 	assert(event(d)),
-=======
->>>>>>> f237c55f3a81d24369d8634fbd2946bfe76dde31
+	assert(event(e)),
 	assert(b before a),
 	assert(c before a),
-	%assert(b before d),
+	assert(d before b),
 	assert(a concurrent e),
 	%assert(d before e),
 	forward.
@@ -197,7 +192,7 @@ addConcurrences([H|T], EventList, NewerEventList, [H|Output]):-
 
 
 
-
+/*
 
 
 
@@ -248,7 +243,7 @@ checkConcurrence(X, [H|T]):-
 	checkConcurrence(X, T).
 	
 
-
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% retracts all the events and rules in the knowledge base %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -259,7 +254,7 @@ reset :-
 	retractall(X after Y),
 	retractall(X concurrent Y).	
 
-
+/*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -277,7 +272,7 @@ goThroughTwinniesList([H|T]):-
 	findall(Z, X after Z, AfterList),
 	assertAllAfters(Y, AfterList),
 	goThroughTwinniesList(T).
-
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%% is before    %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%this predicate checks whether a relations is transitief	%%%
@@ -291,6 +286,16 @@ is_before(X , Z) :-
 	X before Y,
 	is_before(Y , Z).
 
+is_before(X, Y):-
+	((X concurrent Z);
+	(Z concurrent X)),
+	Z before Y.
+
+is_before(X, Y):-
+	X before Z,
+	((Z concurrent Y);
+	(Y concurrent Z)).
+
 is_after(X , Y) :-
 	X after Y.
 
@@ -298,20 +303,25 @@ is_after(X , Z) :-
 	X after Y,
 	is_after(Y , Z).
 
-is_concurrent(X, Y):-
-	X concurrent Y.
-<<<<<<< HEAD
-	%Y concurrent X.
-=======
+is_after(X, Y):-
+	((X concurrent Z);
+	(Z concurrent X)),
+	Z after Y.
 
+is_after(X, Y):-
+	X after Z,
+	((Z concurrent Y);
+	(Y concurrent Z)).
+
+/*
 is_concurrent(X, Y):-
+	X concurrent Y;
 	Y concurrent X.
->>>>>>> f237c55f3a81d24369d8634fbd2946bfe76dde31
 
 is_concurrent(X, Z):-
 	X concurrent Y,
-	is_concurrent(Y, Z).
-
+	is_concurrent(Y, Z),!.
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate activated all the transitif relations of all%
@@ -326,8 +336,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-	findAllAfters(EventsList),
-	inheritProperties.
+	findAllAfters(EventsList).
+	%inheritProperties.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
