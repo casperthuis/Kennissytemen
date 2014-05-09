@@ -36,13 +36,8 @@
 
 %['Fije.Overeem.Casper.Thuis#4.pl'].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-<<<<<<< HEAD
-%%%%%%%%%%%%%%%%%%%%%%% Assingment 1 %%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-=======
 %%%%%%%%%%%%%%%%%%%%%%% Assignment 1 %%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%% time line should look like a ---> b ---> c %%%%%%%%%%
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
+%%%%%%%%% timeline should look like a ---> b ---> c %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 showAllEvent:-
@@ -86,58 +81,19 @@ go1 :-
 	assert(c concurrent j),
 	forward.
 
-<<<<<<< HEAD
-
-=======
-/*
-
-makeEventList:-
-	findall(X, event(X), EventList),
-	putConcurrentsInList(EventList, SortedEventList),
-	write(SortedEventList).
-
-putConcurrentsInList([], _).
-	
-
-putConcurrentsInList([H|T], [SameTimeList2|Y]):-
-	putConcurrentsInList(T, Y),
-	findall(X, H concurrent X, SameTimeList),
-	append([H], SameTimeList, SameTimeList2).
-
-insert_sort(List,Sorted):-
-	i_sort(List,[],Sorted).
-
-i_sort([],Acc,Acc).
-i_sort([H|T],Acc,Sorted):-
-	insert(H,Acc,NAcc),
-	i_sort(T,NAcc,Sorted).
-
-insert(X,[Y|T],[Y|NT]):- 
-	Y before X,
-	insert([X],T,NT).
-insert(X,[Y|T],[X,Y|T]):-
-	X before Y.
-	insert(X,[],[X]).
-	
-*/
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
 go2 :- 
 	reset,
 	assert(event(a)),
 	assert(event(b)),
 	assert(event(c)),
-<<<<<<< HEAD
 	assert(event(e)),
 	assert(event(d)),
-=======
-	assert(event(d)),
-	assert(event(e)),
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
+
 	assert(b before a),
 	assert(c before a),
 	assert(d before b),
 	assert(a concurrent e),
-	%assert(d before e),
+
 	forward.
 
 forward :-
@@ -152,7 +108,7 @@ forward :-
 %% not concurrent whit that event. After this it put the event
 %% in the list either in the next in the event or after the event.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+/*
 makeTimeLines:-
 	setof(X, makeTimeLines(X), List),
 	writeTimeLine(List).
@@ -163,6 +119,27 @@ writeTimeLine([H|T]):-
 	write(T),
 	nl,
 	writeTimeLine(T).
+*/
+
+
+
+makePossibleTimeLines:-
+	setof(Timeline, makeTimeLines(Timeline), Timelines),
+	writeOutTimelines(Timelines).
+
+writeOutTimelines([]):-
+	write('_______________').
+writeOutTimelines([H|T]):-
+	writeOutTimeline(H),nl,
+	writeOutTimelines(T).
+
+writeOutTimeline([]):-
+	write('End').
+writeOutTimeline([H|T]):-
+	write(H),
+	write('--->'),
+	writeOutTimeline(T).
+
 
 makeTimeLines(Output):-
 	findall(Events, event(Events), EventList),
@@ -213,23 +190,6 @@ addConcurrences([H|T], EventList, NewerEventList, [H|Output]):-
 	select(H, EventList, NewEventList),
 	addConcurrences(T, NewEventList, NewerEventList, Output).
 
-<<<<<<< HEAD
-/*
-=======
-
-
-
-
-
-
-
-
-
-/*
-
-
-
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
 makeTimeline:-
 	findall(X, (X before _, not(_ before X)), [H|_]),
 	append([], [H], NewList),
@@ -276,13 +236,7 @@ checkConcurrence(X, [H|T]):-
 	(H before X)),
 	checkConcurrence(X, T).
 	
-<<<<<<< HEAD
-*/
 
-=======
-
-*/
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% retracts all the events and rules in the knowledge base %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -346,12 +300,7 @@ is_after(X , Z) :-
 	X after Y,
 	is_after(Y , Z).
 
-<<<<<<< HEAD
-is_concurrent(X, Y):-
-	X concurrent Y;
-	Y concurrent X.
 
-=======
 is_after(X, Y):-
 	((X concurrent Z);
 	(Z concurrent X)),
@@ -366,16 +315,13 @@ is_after(X, Y):-
 is_concurrent(X, Y):-
 	X concurrent Y;
 	Y concurrent X.
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
+
 
 is_concurrent(X, Z):-
 	X concurrent Y,
 	is_concurrent(Y, Z),!.
-<<<<<<< HEAD
 
-=======
 */
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate activated all the transitif relations of all%
@@ -390,16 +336,8 @@ reflection:-
 transitivity:-
 	findall(X, event(X), EventsList),
 	findAllBefores(EventsList),
-<<<<<<< HEAD
-	findAllAfters(EventsList),
-	inheritProperties,
-	changeAftersToBefores,
-	changeBeforesToAfters.
-	
-=======
 	findAllAfters(EventsList).
-	%inheritProperties.
->>>>>>> 45b1b71d4823b167c6e4e4d2b2fac31a48ab423e
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This predicate findsall the before relations of the all the%
@@ -631,9 +569,9 @@ assertEvents([H|T]):-
 	write('Event asserted: '),
 	write(H),
 	nl,
-	assertList(T).
+	assertEvents(T).
 
-assertEvents([H|T]):-
+assertEvents([_|T]):-
 	assertEvents(T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
