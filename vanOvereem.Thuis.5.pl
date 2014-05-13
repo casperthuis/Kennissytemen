@@ -35,19 +35,45 @@ reset :-
 	retractall(component(_,_,_,_)).
 
 go1:-
+
 	reset,
+
 	assert( input(a, 3)),
 	assert( input(b, 2)),
 	assert( input(c, 2)),
 	assert( input(d, 3)),
 	assert( input(e, 3)),
+
 	assert( component(m1, multi, [a, c], x)),
 	assert( component(m2, multi, [b, d], y)),
 	assert( component(m3, multi, [c, e], z)),
 	assert( component(a1, adder, [x, y], f)),
 	assert( component(a2, adder, [y, z], g)).
 
-	
+
+
+go2:-
+
+	reset,
+
+	assert( input(a, 3)),
+	assert( input(b, 2)),
+	assert( input(c, 2)),
+	assert( input(d, 3)),
+	assert( input(e, 3)),
+	assert( input(f, 2)),
+	assert( input(g, 3)),
+
+	assert( component(a1, adder, [a, b], h)),
+	assert( component(m1, multi, [c, d], i)),
+	assert( component(m2, multi, [h, i], j)),
+	assert( component(a2, adder, [j, e], k)),
+	assert( component(m3, multi, [j, f], l)),
+	assert( component(m4, multi, [k, e], m)),
+	assert( component(m5, multi, [l, e], n)),
+	assert( component(a3, adder, [m, g], o)),
+	assert( component(m6, multi, [n, g], p)),
+	assert( component(a4, adder, [o, p], q)).
 
 
 
