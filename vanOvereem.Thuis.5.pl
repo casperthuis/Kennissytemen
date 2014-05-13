@@ -94,7 +94,7 @@ findNextStep([H|Rest]):-
 	getValueOfComponent(Sort, [Input1,Input2], Value),
 	%not( output(OutputName, Value) ),
 	assert( expectedOutput(OutputName, Value) ),
-	write( 'Derived:' ), write_ln( expectedOutput(OutputName, Value)),
+	write( 'Derived: ' ), write_ln( expectedOutput(OutputName, Value)),
 	checkIfOutputIsInput(OutputName, Value ),
     findNextStep(Rest).
 
