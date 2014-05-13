@@ -18,7 +18,7 @@ showAllInputs:-
 	write_ln(List).
 
 showAllOutput:-
-	findall([X,Y], output(X,Y), List),
+	findall([X,Y], expectedOutput(X,Y), List),
 	write_ln(List).
 
 showAllCompnents:-
@@ -64,11 +64,11 @@ findNextStep([]).
 
 findNextStep([H|Rest]):-
 	H = [Input1, Input2],
-	component(Name, Sort, [Input1,Input2], OutputName),
+	component(_, Sort, [Input1,Input2], OutputName),
 	getValueOfComponent(Sort, [Input1,Input2], Value),
-	not( output(OutputName, Value) ),
-	assert( output(OutputName, Value) ),
-	write( 'Derived:' ), write_ln( Name ),
+	%not( output(OutputName, Value) ),
+	assert( expectedOutput(OutputName, Value) ),
+	write( 'Derived:' ), write_ln( expectedOutput(OutputName, Value)),
 	checkIfOutputIsInput(OutputName, Value ),
     findNextStep(Rest).
 
@@ -86,12 +86,53 @@ getValueOfComponent(Sort, [Input1, Input2], Output):-
 	input(Input2, Value2 ), 
 	Output is Value1 + Value2).
 
+%nog ff kijken voor een regel voor input bijvoorbeeld als 1 aan het eind van een component en als input voor een component is.
 checkIfOutputIsInput(OutputName, Value):-
+	findall(Inputs, component(_,_,Inputs,_), InputsList),
+	flatten(InputsList, FlattenList),
+	member(OutputName, FlattenList),
 	not( input( OutputName, Value )),
 	assert( input( OutputName, Value )).
 
 checkIfOutputIsInput(_,_).
 
+
+
+backward(Output):-
+	findall(Y, (expectedOutput(Y, Output), not( input(Y, Output))), PossibleList),
+	member(X, PossibleList),
+	findPreviousStep(X).
+
+findPreviousStep(Output):-
+	findall(X, (input(X, _), not( expectedOutput(X, _) ) ), AnswerList),
+	member(Output, AnswerList).
+
+findPreviousStep(Output):-
+	component(_, _, [Input1, Input2], Output),
+	findPreviousStep(Input1),
+	findPreviousStep(Input2).
+	
+/*
+is_true( P ):-
+    fact( P ).
+
+is_true( P ):-
+    if Condition then P,
+    is_true( Condition ).
+
+is_true( P1 and P2 ):-
+    is_true( P1 ),
+    is_true( P2 ).
+
+is_true( P1 or P2 ):-
+    is_true( P1 )
+    ;
+    is_true( P2 ).
+
+*/
+
+
+		
 
 /*
 forward:-
