@@ -10,6 +10,9 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- dynamic input/2.
+:- dynamic output/2.
+:- dynamic component/4.
 
 %je houdt bij wat de aannames zijn bij een bepaalde berekening. 
 
@@ -25,16 +28,13 @@ showAllCompnents:-
 	findall([X,Y,Q,Z], component(X,Y,Q,Z), List),
 	write_ln(List).
 
-:- dynamic input/2.
-:- dynamic output/2.
-:- dynamic component/4.
 
 reset :-
 	retractall(input(_,_)),
 	retractall(output(_,_)),
 	retractall(component(_,_,_,_)).
 
-go1:-
+go2:-
 	reset,
 	assert( input(a, 3)),
 	assert( input(b, 2)),
@@ -45,7 +45,14 @@ go1:-
 	assert( component(m2, multi, [b, d], y)),
 	assert( component(m3, multi, [c, e], z)),
 	assert( component(a1, adder, [x, y], f)),
-	assert( component(a2, adder, [y, z], g)).
+	assert( component(a2, adder, [y, z], g)),
+	assert( measuredOutput(f, 10)),
+	assert( measuredOutput(g, 12)),
+	assert( measuredInput(a, 3)),
+	assert( measuredInput(b, 2)),
+	assert( measuredInput(c, 2)),
+	assert( measuredInput(d, 3)),
+	assert( measuredInput(e, 3)).
 
 	
 
@@ -66,7 +73,6 @@ findNextStep([H|Rest]):-
 	H = [Input1, Input2],
 	component(_, Sort, [Input1,Input2], OutputName),
 	getValueOfComponent(Sort, [Input1,Input2], Value),
-	%not( output(OutputName, Value) ),
 	assert( expectedOutput(OutputName, Value) ),
 	write( 'Derived:' ), write_ln( expectedOutput(OutputName, Value)),
 	checkIfOutputIsInput(OutputName, Value ),
@@ -86,7 +92,6 @@ getValueOfComponent(Sort, [Input1, Input2], Output):-
 	input(Input2, Value2 ), 
 	Output is Value1 + Value2).
 
-%nog ff kijken voor een regel voor input bijvoorbeeld als 1 aan het eind van een component en als input voor een component is.
 checkIfOutputIsInput(OutputName, Value):-
 	findall(Inputs, component(_,_,Inputs,_), InputsList),
 	flatten(InputsList, FlattenList),
@@ -97,11 +102,73 @@ checkIfOutputIsInput(OutputName, Value):-
 checkIfOutputIsInput(_,_).
 
 
+findFaultNodes(FaultList):-
+	findall([Name,Value], measuredOutput(Name, Value), MeasuredList),
+	findTheWrongValues(MeasuredList, FaultList).
 
-backward(Output):-
+findTheWrongValues([],[]).
+
+findTheWrongValues([First|MeasuredList], [First|FaultList]):-
+	First = [Name, Value1],
+	expectedOutput(Name, Value2),
+	not( Value1 == Value2),
+	findTheWrongValues(MeasuredList, FaultList).
+
+findTheWrongValues([_|MeasuredList], FaultList):-
+	findTheWrongValues(MeasuredList, FaultList).
+
+findConflictsSet(FaultNodes , Output):-
+	member(X, FaultNodes),
+	X = [Name, _ ],
+	List = [],
+	backward(Name , List, Conflictset),
+	list_to_set(Conflictset, ReverseList),
+	reverse(ReverseList, Output).
+
+backward(Name, List, Output):-
+	findall(Inputs, measuredInput(Inputs, _), AnswerList),
+	member(Name, AnswerList),
+	List = Output.
+	
+backward(Name, List, Output2):-
+	component(ComponentName, _, [Input1, Input2], Name),
+	backward(Input1, [ComponentName|List], Output1),
+	backward(Input2, [ComponentName|Output1], Output2).
+
+
+backward2(Name, List):-
+	findall(Inputs, measuredInput(Inputs, _), AnswerList),
+	member(Name, AnswerList).
+
+backward2(Name, List):-
+	findall(ComponentNames, component(ComponentNames, _, _, Name), ComponentNameList),
+	component(_, _, [Input1, Input2],Name),
+	backward2(Input1, [ComponentNameList|List]),
+	backward2(Input2, [ComponentNameList|List]). 
+
+addNewMeasuredInput(List):-
+	findall([X,Y], (component(X,_,[Input1,Input2],_), member(X, List),(measuredInput(Input1, _ ), InputList)),
+	forwardExpected().
+
+
+%%backward chaining geeft de mogelijke componenten die kapot zijn.!
+/*
+backward(Name):-
 	findall(Y, (expectedOutput(Y, Output), not( input(Y, Output))), PossibleList),
 	member(X, PossibleList),
 	findPreviousStep(X).
+
+findPreviousStep(Name, List)
+	findall(Inputs, measuredInput(Inputs, _), AnswerList),
+	member(Name, AnswerList).
+
+findPreviousStep(Name, List):-
+	component(ComponentName, _, [Input1, Input2], Name),
+	append([ComponentName], List, NewList),
+	findPreviousStep(Input1, NewList),
+	append([ComponentName], NewList, NewerList),
+	findPreviousStep(Input2, NewerList).
+
 
 findPreviousStep(Output):-
 	findall(X, (input(X, _), not( expectedOutput(X, _) ) ), AnswerList),
@@ -111,75 +178,7 @@ findPreviousStep(Output):-
 	component(_, _, [Input1, Input2], Output),
 	findPreviousStep(Input1),
 	findPreviousStep(Input2).
-	
-/*
-is_true( P ):-
-    fact( P ).
+*/	
 
-is_true( P ):-
-    if Condition then P,
-    is_true( Condition ).
-
-is_true( P1 and P2 ):-
-    is_true( P1 ),
-    is_true( P2 ).
-
-is_true( P1 or P2 ):-
-    is_true( P1 )
-    ;
-    is_true( P2 ).
-
-*/
-
-
-		
-
-/*
-forward:-
-    new_derived_fact( P ),
-    !,
-    write( 'Derived:' ), write_ln( P ),
-    assert( fact( P )),
-    forward
-    ;
-    write_ln( 'No more facts' ).
-
-new_derived_fact( Conclusion ):-
-    if Condition then Conclusion,
-    not( fact( Conclusion ) ),
-    composed_fact( Condition ).
-
-composed_fact( Condition ):-
-    fact( Condition ).
-
-composed_fact( Condition1 and Condition2 ):-
-    composed_fact( Condition1 ),
-    composed_fact( Condition2 ).
-
-composed_fact( Condition1 or Condition2 ):-
-    composed_fact( Condition1 )
-    ;
-    composed_fact( Condition2 ).
-
-*/
-/* --- A simple backward chaining rule interpreter --- */
-/*
-is_true( P ):-
-    fact( P ).
-
-is_true( P ):-
-    if Condition then P,
-    is_true( Condition ).
-
-is_true( P1 and P2 ):-
-    is_true( P1 ),
-    is_true( P2 ).
-
-is_true( P1 or P2 ):-
-    is_true( P1 )
-    ;
-    is_true( P2 ).
-
-*/
-/* --- A simple forward chaining rule interpreter --- */
-
+%% conflict herkenning
+%3 optie of a1 of m2 of m1 of m1 en m2. 
