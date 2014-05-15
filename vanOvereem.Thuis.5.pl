@@ -36,6 +36,7 @@ reset :-
 
 go1:-
 	reset,
+
 	assert( input(a, 3)),
 	assert( input(b, 2)),
 	assert( input(c, 2)),
@@ -85,6 +86,9 @@ go2:-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+multiply([X,Y],Z):-
+	Z = X * Y,
+	component(_, _, [X,Y], Z).
 
 
 forward:-
@@ -101,7 +105,7 @@ findNextStep([H|Rest]):-
 	write( 'Derived: ' ), write_ln( expectedOutput(OutputName, Value)),
 	checkIfOutputIsInput(OutputName, Value ),
     findNextStep(Rest).
-
+ 
 findNextStep([H|Rest]):-
 	append(Rest, H, NewRest),
 	findNextStep(NewRest).		
