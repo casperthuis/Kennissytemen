@@ -70,6 +70,15 @@ go2:-
 	assert( input(f, 2)),
 	assert( input(g, 3)),
 
+	assert( measuredOutput(q, 642)),
+	assert( measuredInput(a, 3)),
+	assert( measuredinput(b, 2)),
+	assert( measuredinput(c, 2)),
+	assert( measuredinput(d, 3)),
+	assert( measuredinput(e, 3)),
+	assert( measuredinput(f, 2)),
+	assert( measuredinput(g, 3)),
+
 	assert( component(a1, adder, [a, b], h)),
 	assert( component(m1, multi, [c, d], i)),
 	assert( component(m2, multi, [h, i], j)),
@@ -91,7 +100,7 @@ multiply([X,Y],Z):-
 	component(_, _, [X,Y], Z).
 
 
-forward:-
+makeGrid:-
 	findall([X,Y], component(_, _, [X, Y], _), InputList),
 	findNextStep(InputList).
 
@@ -145,25 +154,25 @@ findTheWrongValues([First|MeasuredList], [First|FaultList]):-
 findTheWrongValues([_|MeasuredList], FaultList):-
 	findTheWrongValues(MeasuredList, FaultList).
 
-findConflictsSet(FaultNodes , Output):-
+getUsedComponentSet(FaultNodes , Output):-
 	member(X, FaultNodes),
 	X = [Name, _ ],
 	List = [],
-	backward(Name , List, Conflictset),
+	getSet(Name , List, Conflictset),
 	list_to_set(Conflictset, ReverseList),
 	reverse(ReverseList, Output).
 
-backward(Name, List, Output):-
+getSet(Name, List, Output):-
 	findall(Inputs, measuredInput(Inputs, _), AnswerList),
 	member(Name, AnswerList),
 	List = Output.
 	
-backward(Name, List, Output2):-
+getSet(Name, List, Output2):-
 	component(ComponentName, _, [Input1, Input2], Name),
-	backward(Input1, [ComponentName|List], Output1),
-	backward(Input2, [ComponentName|Output1], Output2).
+	getSet(Input1, [ComponentName|List], Output1),
+	getSet(Input2, [ComponentName|Output1], Output2).
 
-
+/*
 backward2(Name, List):-
 	findall(Inputs, measuredInput(Inputs, _), AnswerList),
 	member(Name, AnswerList).
@@ -177,7 +186,7 @@ backward2(Name, List):-
 addNewMeasuredInput(List):-
 	findall([X,Y], (component(X,_,[Input1,Input2],_), member(X, List),(measuredInput(Input1, _ ), InputList)),
 	forwardExpected().
-
+*/
 
 %%backward chaining geeft de mogelijke componenten die kapot zijn.!
 /*
