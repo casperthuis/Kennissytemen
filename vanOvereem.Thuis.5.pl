@@ -11,6 +11,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% A circuit consists of components which take two values as input and generate an output with it. This output can be useful as an input for the next component. When having a system, one only knows 1. The original inputvalues, 2. The measured output values  and 3. Whether the components are multipliers or adders. 
+
+% The program can generate the expected in- and output values at every place (node) in the system.
+
+% The generated (expected) outputvalues can differ from the 'real' outputvalues. The computer needs to know the real outputvalues that come out of the circuit, but when testing the circuit for faulty components it can also ask the user for the real (measured) values at certain points in the circuit. The program needs to know this to be able to detect the components that are 'broken' (do not behave as expected).
+
+% The program is dividable in 3 parts: 
+
+%	1. calculating every expected value in the system & check whether system works correctly by matching expected output values with the measured outputvalues.
+%	2. making a list of minimal conflicted component sets.
+%	3. trying to ask the user smart questions about outputvalues at certain places, in order to detect the wrong components of a broken system.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% These are the different parts of the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 :- dynamic input/2.
@@ -25,10 +42,10 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% These predicates are quite nice to check what the current system looks like.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
-%je houdt bij wat de aannames zijn bij een bepaalde berekening. 
 
 showAllInputs:-
 
@@ -62,6 +79,11 @@ reset :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% go1 creates the 'standard' system, given in the assignment. It first resets any earlier systems, then asserts 'goodsets'. Every outputvalue has a certain path of components that are responsible for that value to become what it is. These goodsets are used when one needs to check whether a components is part of a certain output-track. This is the case when generating the minimal-conflict-sets later on: one needs to know what the exact influence is of a component in the whole system.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 go1:-
 	reset,
 
@@ -76,9 +98,20 @@ go1:-
 	assert( component(m3, multi, [c, e], z)),
 	assert( component(a1, adder, [x, y], f)),
 	assert( component(a2, adder, [y, z], g)),
-	assert( measuredOutput(f, 10)),
-	assert( measuredOutput(g, 10)),
+	assert( measuredOutput(f, 10)), % <-- wrong value!
+	assert( measuredOutput(g, 12)), % <-- right value.
+	
+	assertAllGoodSets,
+	
+	makeGrid. % generates all node-values.
 
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is the system we made up. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -112,10 +145,11 @@ go2:-
 	assert( component(m5, multi, [l, e], n)),
 	assert( component(a3, adder, [m, g], o)),
 	assert( component(m6, multi, [n, g], p)),
-	assert( component(a4, adder, [o, p], q)).
+	assert( component(a4, adder, [o, p], q)),
 
-
-
+	assertAllGoodSets,
+	
+	makeGrid.
 go3:-
 
 	assert(input(a, 1)),
@@ -184,7 +218,7 @@ checkIfOutputIsInput(_,_).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% Hier even een voorbeeldje schrijven van hoe dit gaat.
+/*
 
 getValueOfOther(ComponentSort, OutputValue, ExpectedInputValue, OtherInputValue):-
 
@@ -199,13 +233,29 @@ backwardAdder(Value, ExpectedValue , Output):-
 
 	Output is Value - ExpectedValue.
 
+*/
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%% Asserts all 'goodsets' %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+assertAllGoodSets:-
+	
+	findall(EndOutput, measuredOutput(EndOutput, _), EndOutputs),
+	assertGoodSets(EndOutputs).
 
+assertGoodSets([]).
+
+assertGoodSets(EndOutputs):-
+
+	member(EndOutput, EndOutputs),
+	select(EndOutput, EndOutputs, NewEndOutputs),
+	getGoodSet(EndOutput, GoodSet),
+	%write(GoodSet),
+	assert(goodset(EndOutput, GoodSet)),
+	assertGoodSets(NewEndOutputs).
 
 getGoodSet(Name, Output):-
 
@@ -227,45 +277,14 @@ getUsedComponents(Name, List, Output2):-
 	getUsedComponents(Input2, [ComponentName|Output1], Output2).
 
 
-% Asserts all possible goodsets. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-/*
 
-GEEFT NOG DUBBELE ANTWOORDEN; ERGENS EEN CUT
-
-*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-assertAllGoodSets:-
-	
-	findall(EndOutput, measuredOutput(EndOutput, _), EndOutputs),
-	assertGoodSets(EndOutputs).
-
-assertGoodSets([]).
-
-assertGoodSets(EndOutputs):-
-
-	member(EndOutput, EndOutputs),
-	select(EndOutput, EndOutputs, NewEndOutputs),
-	getGoodSet(EndOutput, GoodSet),
-	write(GoodSet),
-	assert(goodset(EndOutput, GoodSet)),
-	assertGoodSets(NewEndOutputs).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% Hier even een voorbeeldje schrijven van hoe dit gaat.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% findfaultNode finds all the wrong endnodes. Wrong endnodes%
-%% are nodes that the expectedOutput is not the same as their%
-%% measured.												%%
+% findfaultNodes/1 finds all the wrong endnodes. Wrong endnodes are nodes from which the expectedOutput-value is not the same as their measured value.										
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -289,16 +308,45 @@ findTheWrongValues([_|MeasuredList], FaultList):-
 	findTheWrongValues(MeasuredList, FaultList).
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%       makeMinimalConflictLists/2    %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Gives back a conflictlist when you put in a false endnode. It calculated which components could be responsible for the falseness of that endnode. 
+
+/* Query example, after go1. (This is when g has a right output value)
+
+475 ?- go1.
+Derived: expectedOutput(x,6)
+Derived: expectedOutput(y,6)
+Derived: expectedOutput(z,6)
+Derived: expectedOutput(f,12)
+Derived: expectedOutput(g,12)
+true .
+
+476 ?- makeMinimalConflictLists(f, X).
+X = [[m2, m3], [m2, a2], [m1], [a1]] .
 
 
+It doesn't work quite right yet for go2 or maybe other systems with a broader horizon than go1. This is because when it reasons backward from the faulty endnode, it doesn't look back any further than 2 components back.
 
-% NB --> makeGrid moet aangeroepen zijn
+We had a few ideas about the implementation (using recursion) to make this work, but we didn't have the time to get it quite right.
+
+The important things to consider when wondering whether a component should be put (perhaps with a combination of other components) in the minimal-conflict-set are the following:
+
+- Does the component any how lead to another end node? 
+	No -> put it 'alone' in m-c-set.
+	Yes -> Are these endnodes false too?
+		Yes -> Put 'alone' in m-c-set.
+		No -> 
+			1. The component should be combined with the next component in the system.
+			2. The component should be combined with his 'brother'-component; this is the component that also brings in an output value for the next component.
+			3. If all this brother-component has parent-components of itself, then those components can again be responsible for the faultyness of this brother-component. This cna go on and on and on (feel the recursion) again until the original inputs are hit (beginning of system is faced, can't go backward anymore).
+
+*/
+
+% The actual component with the faulty endnode as output should in any case be in the minimal-conflict-set! The component doesn't lead to other components.
 
 makeMinimalConflictLists(FalseEndNode, NewestMinimalConflictLists):-
 	
@@ -306,7 +354,8 @@ makeMinimalConflictLists(FalseEndNode, NewestMinimalConflictLists):-
 	component(LastComponentName, _, [Input1,Input2], FalseEndNode),
 	append([[LastComponentName]], MinimalConflictLists, NewMinimalConflictLists),
 	goFurther(Input1, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists),
-	goFurther(Input2, NewerMinimalConflictLists, FalseEndNode, NewestMinimalConflictLists).
+	goFurther(Input2, NewerMinimalConflictLists, FalseEndNode, ReversedLists),
+	reverse(ReversedLists, NewestMinimalConflictLists).
 	
 
 
@@ -318,9 +367,9 @@ goFurther(InputName, X,_,X):-
 	(component(_, _, [_, InputName], _))).
 	
 
-goFurther(InputName, MinimalConflictLists, FalseEndNode, NewerMinimalConflictLists):-
+goFurther(InputName, MinimalConflictLists, FalseEndNode, NewMinimalConflictLists):-
 	
-	component(ComponentName, _, [Input1, Input2], InputName),
+	component(ComponentName, _, [_,_], InputName),
 	forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalConflictLists).
 
 
@@ -328,12 +377,12 @@ forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalCon
 
 	findall(PossibleEndNode, (goodset(PossibleEndNode, GoodSet), member(ComponentName, GoodSet)), EndNodes),
 	select(FalseEndNode, EndNodes, OtherEndNodes),
-	checkCorrectness(OtherEndNodes),
-	append([[ComponentName]], MinimalConflictLists, NewMinimalConflictLists),
-	write(ComponentName),
-	write(' has been added to the minimal-conflict-list.'),nl.
+	checkCorrectness(OtherEndNodes), % are the other endnodes false too? This fails when no!
+	append([[ComponentName]], MinimalConflictLists, NewMinimalConflictLists).
 
 
+
+% The other endnodes are apparently not false; combined components have to be put in the m-c-set.
 forwardChecking(ComponentName, _, MinimalConflictLists, NewMinimalConflictLists):-!,
 
 	component(ComponentName, _, _, Outputname),
@@ -359,13 +408,35 @@ checkCorrectness([H|EndNodes]):-
 	member([H,_], FaultNodes),
 	checkCorrectness(EndNodes).
 
+/* Another query example: (Now g is also false: different minimal-conflict-set!
+
+497 ?- retract(measuredOutput(g,12)).
+true.
+
+498 ?- assert(measuredOutput(g,10)).
+true.
+
+499 ?- makeMinimalConflictLists(f, X).
+X = [[a1], [m1], [m2]] .
+
+
+*/
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% findProblem tries to find wrong components through the   %%
-%% the users input. It goes by the minimal conflict list and%%
-%% ask the users measurements, It add these fact and the 	%%
-%% calculateds the estimated output. It compares this by the%%
-%% expectedOutput, It does this for every model. 			%%
+%% the users input. It goes by the minimal-conflict-list and%%
+%% ask the users measurements, It add these facts and the   %%
+%% calculates the estimated output. It compares this with the%
+%% expectedOutput. It does this for every model. 	    %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 findProblem([]):-
@@ -380,25 +451,23 @@ findProblem([[ComponentName1, ComponentName2]|Tail]):-
 	calculatedNewMeasuredValue(ComponentName1, MeasuredValue1),
 	expectedOutput(Output1, ExpectedValue1),
 	ExpectedValue1 == MeasuredValue1,
-	write('the component is working correct'),
 	write(ComponentName1),
-	write(' and '),
+	write(' is working correctly, and'),
 	getAllTheValues([Input3, Input4]),
 	calculatedNewMeasuredValue(ComponentName2, MeasuredValue2),
 	expectedOutput(Output2, ExpectedValue2),
 	ExpectedValue2 == MeasuredValue2,
-	write('the component is working correct'),
+	write('the component '),
 	write(ComponentName2),
-	write(' broke.')	
+	write(' is broken.'),	
 	findProblem(Tail).
 	
 findProblem([[ComponentName1,ComponentName2]|_]):-
 
-	write('the wrong component is '),
 	write(ComponentName1),
 	write(' and '),
 	write(ComponentName2),
-	write(' broke.').
+	write(' are broken.').
 
 
 findProblem([[ComponentName]|Tail]):-
@@ -412,9 +481,8 @@ findProblem([[ComponentName]|Tail]):-
 
 findProblem([[ComponentName]|_]):-
 
-	write('the wrong component is '),
 	write(ComponentName),
-	write(' broke.').
+	write(' is broken.').
 
 	
 calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
@@ -445,11 +513,35 @@ askInputFromUser(Input1, Output):-
 	write(Input1),
 	nl,
 	read(Output).
-	
+
+
+% We hope you enjoyed this program.
+
+%	- Casper Thuis & Fije van Overeem
 
 
 
-/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* BUNCH OF DEAD CODE
 
 
 
