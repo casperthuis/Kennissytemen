@@ -16,26 +16,50 @@
 :- dynamic input/2.
 :- dynamic output/2.
 :- dynamic component/4.
+:- dynamic goodset/2.
+:- dynamic measuredInput/2.
+:- dynamic measuredOutput/2.
+:- dynamic expectedInput/2.
+:- dynamic expectedOutput/2.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %je houdt bij wat de aannames zijn bij een bepaalde berekening. 
 
 showAllInputs:-
+
 	findall([X,Y], input(X,Y), List),
 	write_ln(List).
 
 showAllOutput:-
+
 	findall([X,Y], expectedOutput(X,Y), List),
 	write_ln(List).
 
 showAllComponents:-
+
 	findall([X,Y,Q,Z], component(X,Y,Q,Z), List),
 	write_ln(List).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 reset :-
+
 	retractall(input(_,_)),
 	retractall(output(_,_)),
-	retractall(component(_,_,_,_)).
+	retractall(component(_,_,_,_)),
+	retractall(measuredInput(_,_)),
+	retractall(expectedInput(_,_)),
+	retractall(expectedOutput(_,_)),
+	retractall(measuredOutput(_,_)),
+	retractall(goodset(_,_)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go1:-
 	reset,
@@ -61,7 +85,8 @@ go1:-
 	assert( measuredInput(d, 3)),
 	assert( measuredInput(e, 3)).
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go2:-
 
@@ -77,12 +102,12 @@ go2:-
 
 	assert( measuredOutput(q, 642)),
 	assert( measuredInput(a, 3)),
-	assert( measuredinput(b, 2)),
-	assert( measuredinput(c, 2)),
-	assert( measuredinput(d, 3)),
-	assert( measuredinput(e, 3)),
-	assert( measuredinput(f, 2)),
-	assert( measuredinput(g, 3)),
+	assert( measuredInput(b, 2)),
+	assert( measuredInput(c, 2)),
+	assert( measuredInput(d, 3)),
+	assert( measuredInput(e, 3)),
+	assert( measuredInput(f, 2)),
+	assert( measuredInput(g, 3)),
 
 	assert( component(a1, adder, [a, b], h)),
 	assert( component(m1, multi, [c, d], i)),
@@ -96,17 +121,28 @@ go2:-
 	assert( component(a4, adder, [o, p], q)).
 
 
+
+go3:-
+
+	assert(input(a, 1)),
+	assert(input(b, 1)),
+	assert(measuredOutput(c, 2)),
+	assert(component(a1, adder, [a, b], c)).
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 makeGrid:-
+
 	findall([X,Y], component(_, _, [X, Y], _), InputList),
 	findNextStep(InputList).
 
 findNextStep([]).
 
 findNextStep([H|Rest]):-
+
 	H = [Input1, Input2],
 	component(_, Sort, [Input1,Input2], OutputName),
 	getValueOfComponent(Sort, [Input1,Input2], Value),
@@ -116,10 +152,12 @@ findNextStep([H|Rest]):-
     findNextStep(Rest).
  
 findNextStep([H|Rest]):-
+
 	append(Rest, H, NewRest),
 	findNextStep(NewRest).		
 
 getValueOfComponent(Sort, [Input1, Input2], Output):-
+
 	(Sort == 'multi',
 	input(Input1, Value1 ),
 	input(Input2, Value2 ),	
@@ -130,6 +168,7 @@ getValueOfComponent(Sort, [Input1, Input2], Output):-
 	Output is Value1 + Value2).
 
 checkIfOutputIsInput(OutputName, Value):-
+
 	findall(Inputs, component(_,_,Inputs,_), InputsList),
 	flatten(InputsList, FlattenList),
 	member(OutputName, FlattenList),
@@ -144,20 +183,21 @@ checkIfOutputIsInput(_,_).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-findFaultNodes(FaultList):-
-	findall([Name,Value], measuredOutput(Name, Value), MeasuredList),
-	findTheWrongValues(MeasuredList, FaultList).
+% Hier even een voorbeeldje schrijven van hoe dit gaat.
 
-findTheWrongValues([],[]).
+getValueOfOther(ComponentSort, OutputValue, ExpectedInputValue, OtherInputValue):-
 
-findTheWrongValues([First|MeasuredList], [First|FaultList]):-
-	First = [Name, Value1],
-	expectedOutput(Name, Value2),
-	not( Value1 == Value2),
-	findTheWrongValues(MeasuredList, FaultList).
+	(ComponentSort == multi, backwardMulti(OutputValue, ExpectedInputValue, OtherInputValue);
+	ComponentSort == adder, backwardAdder(OutputValue, ExpectedInputValue, OtherInputValue)), !.
 
-findTheWrongValues([_|MeasuredList], FaultList):-
-	findTheWrongValues(MeasuredList, FaultList).
+backwardMulti(Value, ExpectedValue , Output):-
+
+	Output is Value / ExpectedValue.
+
+backwardAdder(Value, ExpectedValue , Output):-
+
+	Output is Value - ExpectedValue.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -166,39 +206,78 @@ findTheWrongValues([_|MeasuredList], FaultList):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-getGoodSet(Name , Output):-
+getGoodSet(Name, Output):-
+
 	List = [],
 	getUsedComponents(Name , List, Componentset),
 	list_to_set(Componentset, ReversedList),
 	reverse(ReversedList, Output).
 
 getUsedComponents(Name, List, Output):-
+
 	findall(Inputs, input(Inputs, _), AnswerList),
 	member(Name, AnswerList),!,
 	List = Output.
 	
 getUsedComponents(Name, List, Output2):-
+
 	component(ComponentName, _, [Input1, Input2], Name),
 	getUsedComponents(Input1, [ComponentName|List], Output1),
 	getUsedComponents(Input2, [ComponentName|Output1], Output2).
 
+
+% Asserts all possible goodsets. 
+
+/*
+
+GEEFT NOG DUBBELE ANTWOORDEN; ERGENS EEN CUT
+
+*/
+
+
+assertAllGoodSets:-
+	
+	findall(EndOutput, measuredOutput(EndOutput, _), EndOutputs),
+	assertGoodSets(EndOutputs).
+
+assertGoodSets([]).
+
+assertGoodSets(EndOutputs):-
+
+	member(EndOutput, EndOutputs),
+	select(EndOutput, EndOutputs, NewEndOutputs),
+	getGoodSet(EndOutput, GoodSet),
+	write(GoodSet),
+	assert(goodset(EndOutput, GoodSet)),
+	assertGoodSets(NewEndOutputs).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% Hier even een voorbeeldje schrijven van hoe dit gaat.
 
-getValueOfOther(ComponentSort, OutputValue, ExpectedInputValue, OtherInputValue):-
-	(ComponentSort == multi, backwardMulti(OutputValue, ExpectedInputValue, OtherInputValue);
-	ComponentSort == adder, backwardAdder(OutputValue, ExpectedInputValue, OtherInputValue)), !.
 
-backwardMulti(Value, ExpectedValue , Output):-
-	Output is Value / ExpectedValue.
+findFaultNodes(FaultList):-
 
-backwardAdder(Value, ExpectedValue , Output):-
-	Output is Value - ExpectedValue.
+	findall([Name,Value], measuredOutput(Name, Value), MeasuredList),
+	findTheWrongValues(MeasuredList, FaultList).
+
+findTheWrongValues([],[]).
+
+findTheWrongValues([First|MeasuredList], [First|FaultList]):-
+
+	First = [Name, Value1],
+	expectedOutput(Name, Value2),
+	not( Value1 == Value2),
+	findTheWrongValues(MeasuredList, FaultList).
+
+findTheWrongValues([_|MeasuredList], FaultList):-
+
+	findTheWrongValues(MeasuredList, FaultList).
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -206,16 +285,70 @@ backwardAdder(Value, ExpectedValue , Output):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-/*findMinimalSet(List):-
+
+
+% NB --> makeGrid moet aangeroepen zijn
+
+makeMinimalConflictLists(FalseEndNode, NewerMinimalConflictLists):-
+	
+	MinimalConflictLists = [],
+	component(LastComponentName, _, [Input1,Input2], FalseEndNode),
+	append([[LastComponentName]], MinimalConflictLists, NewMinimalConflictLists),
+	write(NewMinimalConflictLists),
+	goFurther(Input1, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists).
+	%goFurther(Input2, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists),
+	
+
+
+
+goFurther(InputName, _,_,_):-
+	
+	input(InputName, _).
+
+goFurther(InputName, MinimalConflictLists, FalseEndNode, NewMinimalConflictLists):-
+	
+	component(ComponentName, _, [Input1, Input2], InputName),
+	forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalConflictLists).
+
+
+forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalConflictLists):-
+
+	findall(PossibleEndNode, (goodset(PossibleEndNode, GoodSet), member(ComponentName, GoodSet)), EndNodes),
+	select(FalseEndNode, EndNodes, OtherEndNodes),
+	checkCorrectness(OtherEndNodes),
+	append([ComponentName], MinimalConflictLists, NewMinimalConflictLists),
+	write(ComponentName),
+	write(' has been added to the minimal-conflict-list').
+
+
+checkCorrectness([]).
+	
+
+checkCorrectness([H|EndNodes]):-
+
+	findFaultNodes(FaultNodes),
+	member(H, FaultNodes),
+	checkCorrectness(EndNodes).
+
+
+
+
+
+	
+
+/*
+findMinimalSet(List):-
 	findFaultNodes(Faults),!,
 	Faults = [[Name, Value]|_],
 	component(ComponentName, Sort, [Input1,Input2], Name),
 	input(Input1, Value1),
-	input(Input2, Value2).
+	input(Input2, Value2),
 	
 	% Hier moeten we kunnen kijken of input1 en input2 groter zijn dan value.
+	
 
 */
+
 
 
 /*checkIfBiggerThanOutPut(Sort ,Value, Value1, Value2):-
@@ -230,16 +363,18 @@ findMinimalConflictSet(MinimalList):-
 	getUsedComponentSet(Name, Goodset),
 	getStarted(Name, Value, Goodset, MinimalList).
 	%component(ComponentName, _ , _ , Name).
+*/
+
+	
 
 
-getStarted(Name, Value, Goodset, MinimalList):-
-	findall([Input1,Input2], component(ComponentName, Sort, [Input1,Input2], Name), InputList),
-	selectRandomNodes(InputList, X, Y),
-	%select(Component, Goodset, MinimalList),
-	expectedOutput(X, ExpectedValue),
-	getValueOfOther(Sort, Value, ExpectedValue, OutputValue),
-	%not ( compareExpectedWithMeasured( OutputValue, Y)),
-	Output is  < 0  .
+
+
+
+/*
+
+
+
 
 selectRandomNodes(InputList, X, Y):-
 	member(X, InputList),
