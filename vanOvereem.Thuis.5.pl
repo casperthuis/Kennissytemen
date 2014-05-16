@@ -77,7 +77,6 @@ go1:-
 	assert( component(a1, adder, [x, y], f)),
 	assert( component(a2, adder, [y, z], g)),
 	assert( measuredOutput(f, 10)),
-
 	assert( measuredOutput(g, 10)),
 	%assert( measuredInput(y, 6)),
 	%assert( measuredInput(x, 6)),
@@ -311,7 +310,7 @@ goFurther(InputName, X,_,X):-
 	(component(_, _, [_, InputName], _))).
 	
 
-goFurther(InputName, MinimalConflictLists, FalseEndNode, NewMinimalConflictLists):-
+goFurther(InputName, MinimalConflictLists, FalseEndNode, NewerMinimalConflictLists):-
 	
 	component(ComponentName, _, [Input1, Input2], InputName),
 	forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalConflictLists).
