@@ -182,11 +182,6 @@ getSet(Name, List, Output2):-
 
 
 
-bmulti(Value, ExpectedValue , Output):-
-	Output is Value / ExpectedValue.
-
-badder(Value, ExpectedValue , Output):-
-	Output is Value - ExpectedValue.
 
 
 getValueOfOther(Sort, Value, ExpectedValue, Output):-
@@ -194,21 +189,43 @@ getValueOfOther(Sort, Value, ExpectedValue, Output):-
 	Sort == adder, badder(Value, ExpectedValue, Output)).
 
 
-findMinimalSet(List):-
+
+
+minimalList(List):-
 	findFaultNodes(Faults),!,
-	Faults = [[Name, Value]|_],
-	component(ComponentName, Sort, [Input1,Input2], Name),
-	input(Input1, Value1),
-	input(Input2, Value2),
-	
-	% Hier moeten we kunnen kijken of input1 en input2 groter zijn dan value.
-.
+	Faults = [[Name, _]|_],
+	findallJUNK(Name, List, Output).
+
+findallJUNK(Name, List, Output):-
+	findall(Inputs, measuredInput(Inputs, _), AnswerList),
+	member(Name, AnswerList),
+	%foward,
+	List = Output.
+
+findallJUNK(Name, List, Output):-
+	component(ComponentName, _, [Input1, Input2], Name),
+	append([[ComponentName]], List, NewList).	
 
 
 
-checkIfBiggerThanOutPut(Sort ,Value, Value1, Value2):-
-	Value1 > Value;
-	Value2 > 
+checkIfBiggerThanValue(Value, Value1, Value2):-
+	Value1 < Value.
+	%Value2 < .	
+
+bmulti(Value, Value1 , Value2):-
+	Value1 > Value,
+	Value2 > Value.
+
+badder(Value, ExpectedValue , Output):-
+	Output is Value - ExpectedValue.
+
+getValueOfOther(Sort, Value, Value1, Value2):-
+	(Sort == multi, bmulti(Value, Value1, Value2);
+	Sort == adder, badder(Value, Value1, Value2)).
+
+
+
+
 
 /*
 %findFaultNodes geeft nu 1 foute node terug moeten er mogelijk meerdere zijn!!!!!!
