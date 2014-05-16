@@ -449,28 +449,56 @@ askInputFromUser([_|Rest]):-
 
 
 findProblem([]):-
+
 	write('No faults').
+
+findProblem([[ComponentName1, ComponentName2]|Tail]):-
+
+	component(ComponentName1,_, [Input1,Input2], Output1),
+	component(ComponentName2,_, [Input3,Input4], Output2),
+	getAllTheValues([Input1, Input2]),
+	calculatedNewMeasuredValue(ComponentName1, MeasuredValue1),
+	expectedOutput(Output1, ExpectedValue1),
+	ExpectedValue1 == MeasuredValue1,
+	write('the component is working correct'),
+	write(ComponentName1),
+	write(' and '),
+	getAllTheValues([Input3, Input4]),
+	calculatedNewMeasuredValue(ComponentName2, MeasuredValue2),
+	expectedOutput(Output2, ExpectedValue2),
+	ExpectedValue2 == MeasuredValue2,
+	write('the component is working correct'),
+	write(ComponentName2),
+	write(' broke.')	
+	findProblem(Tail).
 	
-findProblem([Head|Tail]):-
-	Head = [ComponentName],
+findProblem([[ComponentName1,ComponentName2]|_]):-
+
+	write('the wrong component is '),
+	write(ComponentName1),
+	write('and'),
+	write(ComponentName2),
+	write(' broke.').
+
+
+findProblem([[ComponentName]|Tail]):-
+
 	component(ComponentName,_, [Input1,Input2], Output),
 	getAllTheValues([Input1, Input2]),
 	calculatedNewMeasuredValue(ComponentName, MeasuredValue),
-	checkForComponentIfWorksCorrect(ComponentName, MeasuredValue),
-	%expectedOutput(Output, ExpectedValue),
-	%ExpectedValue == MeasuredValue,
+	expectedOutput(Output, ExpectedValue),
+	ExpectedValue == MeasuredValue,
 	findProblem(Tail).
 
-findProblem([Head|_]):-
-	Head = [ComponentName],
+findProblem([[ComponentName]|_]):-
+
 	write('the wrong component is '),
 	write(ComponentName),
 	write(' broke.').
 
-checkForComponentIfWorksCorrect(ComponentName, MeasuredValue):-
-	component().
 	
 calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
+
 	component(ComponentName, ComponentSort, [Input1,Input2],OutputName),
 	measuredInput(Input1, Value1),
 	measuredInput(Input2, Value2),
@@ -481,15 +509,18 @@ calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
 getAllTheValues([]).
 
 getAllTheValues([Input1|Rest]):-
+
 	not( measuredInput(Input1, _) ),
 	askInputFromUser(Input1, Value),
 	assert( measuredInput(Input1, Value)),
 	getAllTheValues(Rest).
 
 getAllTheValues([_|Rest]):-
+
 	getAllTheValues(Rest).
 
 askInputFromUser(Input1, Output):-
+
 	write('What is the measured Input from point: '),
 	write(Input1),
 	nl,
