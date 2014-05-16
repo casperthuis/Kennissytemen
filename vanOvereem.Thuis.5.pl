@@ -437,8 +437,9 @@ findProblem([Head|Tail]):-
 	component(ComponentName,_, [Input1,Input2], Output),
 	getAllTheValues([Input1, Input2]),
 	calculatedNewMeasuredValue(ComponentName, MeasuredValue),
-	expectedOutput(Output, ExpectedValue),
-	ExpectedValue == MeasuredValue,
+	checkForComponentIfWorksCorrect(ComponentName, MeasuredValue),
+	%expectedOutput(Output, ExpectedValue),
+	%ExpectedValue == MeasuredValue,
 	findProblem(Tail).
 
 findProblem([Head|_]):-
@@ -447,13 +448,15 @@ findProblem([Head|_]):-
 	write(ComponentName),
 	write(' broke.').
 
+checkForComponentIfWorksCorrect(ComponentName, MeasuredValue):-
+	component().
 	
 calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
 	component(ComponentName, ComponentSort, [Input1,Input2],OutputName),
 	measuredInput(Input1, Value1),
 	measuredInput(Input2, Value2),
 	(ComponentSort == adder, MeasuredValue is Value1 + Value2;
-	ComponentSort == multi, MeasuredValue is Value1 * Value2),
+	ComponentSort == multi, MeasuredValue is Value1 * Value2),!,
 	assert( measuredInput(OutputName ,MeasuredValue)).
 
 getAllTheValues([]).
