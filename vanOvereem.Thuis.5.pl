@@ -77,7 +77,8 @@ go1:-
 	assert( component(a1, adder, [x, y], f)),
 	assert( component(a2, adder, [y, z], g)),
 	assert( measuredOutput(f, 10)),
-	assert( measuredOutput(g, 12)),
+
+	assert( measuredOutput(g, 10)),
 	%assert( measuredInput(y, 6)),
 	%assert( measuredInput(x, 6)),
 	assert( measuredInput(a, 3)),
@@ -127,7 +128,7 @@ go3:-
 
 	assert(input(a, 1)),
 	assert(input(b, 1)),
-	assert(measuredOutput(c, 2)),
+	assert(measuredOutput(c, 1)),
 	assert(component(a1, adder, [a, b], c)).
 
 
@@ -292,21 +293,23 @@ findTheWrongValues([_|MeasuredList], FaultList):-
 
 % NB --> makeGrid moet aangeroepen zijn
 
-makeMinimalConflictLists(FalseEndNode, NewerMinimalConflictLists):-
+makeMinimalConflictLists(FalseEndNode, NewestMinimalConflictLists):-
 	
 	MinimalConflictLists = [],
 	component(LastComponentName, _, [Input1,Input2], FalseEndNode),
 	append([[LastComponentName]], MinimalConflictLists, NewMinimalConflictLists),
-	write(NewMinimalConflictLists),
-	goFurther(Input1, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists).
-	%goFurther(Input2, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists),
+	goFurther(Input1, NewMinimalConflictLists, FalseEndNode, NewerMinimalConflictLists),
+	goFurther(Input2, NewerMinimalConflictLists, FalseEndNode, NewestMinimalConflictLists).
 	
 
 
-
-goFurther(InputName, _,_,_):-
+% Basecase is when inputname is original input.
+goFurther(InputName, X,_,X):-
 	
-	input(InputName, _).
+	not(component(_,_,_,InputName)),
+	((component(_, _, [InputName,_], _));
+	(component(_, _, [_, InputName], _))).
+	
 
 goFurther(InputName, MinimalConflictLists, FalseEndNode, NewMinimalConflictLists):-
 	
@@ -319,18 +322,34 @@ forwardChecking(ComponentName, FalseEndNode, MinimalConflictLists, NewMinimalCon
 	findall(PossibleEndNode, (goodset(PossibleEndNode, GoodSet), member(ComponentName, GoodSet)), EndNodes),
 	select(FalseEndNode, EndNodes, OtherEndNodes),
 	checkCorrectness(OtherEndNodes),
-	append([ComponentName], MinimalConflictLists, NewMinimalConflictLists),
+	append([[ComponentName]], MinimalConflictLists, NewMinimalConflictLists),
 	write(ComponentName),
-	write(' has been added to the minimal-conflict-list').
+	write(' has been added to the minimal-conflict-list.'),nl.
+
+
+forwardChecking(ComponentName, _, MinimalConflictLists, NewMinimalConflictLists):-!,
+
+	component(ComponentName, _, _, Outputname),
+	(component(NextComponent, _, [Outputname, _], _),
+	append([[ComponentName, NextComponent]], MinimalConflictLists, AlmostNewMinimalConflictLists),
+	component(NextComponent, _, [_, OtherInputFromNextComponent], _),
+	component(OtherComponent, _,_,OtherInputFromNextComponent),
+	append([[ComponentName, OtherComponent]], AlmostNewMinimalConflictLists, NewMinimalConflictLists));
+	
+	(component(NextComponent, _, [_,Outputname], _),
+	append([[ComponentName, NextComponent]], MinimalConflictLists, AlmostNewMinimalConflictLists),
+	component(NextComponent, _, [OtherInputFromNextComponent, _], _),
+	component(OtherComponent, _,_,OtherInputFromNextComponent),
+	append([[ComponentName, OtherComponent]], AlmostNewMinimalConflictLists, NewMinimalConflictLists)).
+
 
 
 checkCorrectness([]).
-	
 
 checkCorrectness([H|EndNodes]):-
 
 	findFaultNodes(FaultNodes),
-	member(H, FaultNodes),
+	member([H,_], FaultNodes),
 	checkCorrectness(EndNodes).
 
 
