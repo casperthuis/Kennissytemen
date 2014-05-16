@@ -27,6 +27,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+
 %je houdt bij wat de aannames zijn bij een bepaalde berekening. 
 
 showAllInputs:-
@@ -76,14 +77,15 @@ go1:-
 	assert( component(a1, adder, [x, y], f)),
 	assert( component(a2, adder, [y, z], g)),
 	assert( measuredOutput(f, 10)),
+
 	assert( measuredOutput(g, 10)),
-	assert( measuredInput(y, 6)),
-	assert( measuredInput(x, 6)),
+	%assert( measuredInput(y, 6)),
+	%assert( measuredInput(x, 6)),
 	assert( measuredInput(a, 3)),
-	assert( measuredInput(b, 2)),
-	assert( measuredInput(c, 2)),
-	assert( measuredInput(d, 3)),
-	assert( measuredInput(e, 3)).
+	assert( measuredInput(c, 2)).
+	%assert( measuredInput(c, 2)),
+	%assert( measuredInput(d, 3)),
+	%assert( measuredInput(e, 3)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -257,6 +259,8 @@ assertGoodSets(EndOutputs):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+% Hier even een voorbeeldje schrijven van hoe dit gaat.
+
 
 
 findFaultNodes(FaultList):-
@@ -351,39 +355,6 @@ checkCorrectness([H|EndNodes]):-
 
 
 
-	
-
-/*
-findMinimalSet(List):-
-	findFaultNodes(Faults),!,
-	Faults = [[Name, Value]|_],
-	component(ComponentName, Sort, [Input1,Input2], Name),
-	input(Input1, Value1),
-	input(Input2, Value2),
-	
-	% Hier moeten we kunnen kijken of input1 en input2 groter zijn dan value.
-	
-
-*/
-
-
-
-/*checkIfBiggerThanOutPut(Sort ,Value, Value1, Value2):-
-	Value1 > Value;
-	Value2 > 
-*/
-/*
-%findFaultNodes geeft nu 1 foute node terug moeten er mogelijk meerdere zijn!!!!!!
-findMinimalConflictSet(MinimalList):-
-	findFaultNodes(WrongNode),
-	WrongNode = [[Name, Value]],
-	getUsedComponentSet(Name, Goodset),
-	getStarted(Name, Value, Goodset, MinimalList).
-	%component(ComponentName, _ , _ , Name).
-*/
-
-	
-
 
 
 
@@ -448,5 +419,78 @@ findPreviousStep(Output):-
 
 %% conflict herkenning
 %3 optie of a1 of m2 of m1 of m1 en m2. 
+
+
+findCandidates([]).
+
+findCandidates([First|Rest]):-
+	askInputFromUser(First),
+	findCandidates(Rest).
+/*
+askInputFromUser([]).
+
+askInputFromUser([FirstElement|Rest]):-
+	component(FirstElement,Sort,[Input1,Input2],_),
+	not( measuredOutput(Input1, _)),
+	not( measuredOutput(Input2, _)),
+	write("What is the measuredInput from point: "),
+	write(Input1),
+	readln(Value1),
+	assert(measuredOutput(Input1, Value1 )),
+	write("What is the measuredInput from point: "),
+	write(Input2),
+	readln(Value2),
+	assert(measuredOutput(Input2, Value2 )),
+	askInputFromUser(Rest).
+	
+askInputFromUser([_|Rest]):-
+	askInputFromUser(Rest).
+*/
+
+
+findProblem([]):-
+	write('No faults').
+	
+findProblem([Head|Tail]):-
+	Head = [ComponentName],
+	component(ComponentName,_, [Input1,Input2], Output),
+	getAllTheValues([Input1, Input2]),
+	calculatedNewMeasuredValue(ComponentName, MeasuredValue),
+	expectedOutput(Output, ExpectedValue),
+	ExpectedValue == MeasuredValue,
+	findProblem(Tail).
+
+findProblem([Head|_]):-
+	Head = [ComponentName],
+	write('the wrong component is '),
+	write(ComponentName),
+	write(' broke.').
+
+	
+calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
+	component(ComponentName, ComponentSort, [Input1,Input2],OutputName),
+	measuredInput(Input1, Value1),
+	measuredInput(Input2, Value2),
+	(ComponentSort == adder, MeasuredValue is Value1 + Value2;
+	ComponentSort == multi, MeasuredValue is Value1 * Value2),
+	assert( measuredInput(OutputName ,MeasuredValue)).
+
+getAllTheValues([]).
+
+getAllTheValues([Input1|Rest]):-
+	not( measuredInput(Input1, _) ),
+	askInputFromUser(Input1, Value),
+	assert( measuredInput(Input1, Value)),
+	getAllTheValues(Rest).
+
+getAllTheValues([_|Rest]):-
+	getAllTheValues(Rest).
+
+askInputFromUser(Input1, Output):-
+	write('What is the measured Input from point: '),
+	write(Input1),
+	nl,
+	read(Output).
+	
 
 
