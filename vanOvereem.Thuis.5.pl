@@ -79,13 +79,6 @@ go1:-
 	assert( measuredOutput(f, 10)),
 
 	assert( measuredOutput(g, 10)),
-	%assert( measuredInput(y, 6)),
-	%assert( measuredInput(x, 6)),
-	assert( measuredInput(a, 3)),
-	assert( measuredInput(c, 2)).
-	%assert( measuredInput(c, 2)),
-	%assert( measuredInput(d, 3)),
-	%assert( measuredInput(e, 3)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,6 +127,13 @@ go3:-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% MakeGrid goes forward to the system adding all the expected
+%% output. It goes forward by taking all the input from all the
+%% components calculating their expected output. It stops when
+%% all the input from all the component has been processed
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 makeGrid:-
@@ -235,6 +235,9 @@ getUsedComponents(Name, List, Output2):-
 GEEFT NOG DUBBELE ANTWOORDEN; ERGENS EEN CUT
 
 */
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 assertAllGoodSets:-
@@ -260,6 +263,11 @@ assertGoodSets(EndOutputs):-
 
 
 % Hier even een voorbeeldje schrijven van hoe dit gaat.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% findfaultNode finds all the wrong endnodes. Wrong endnodes%
+%% are nodes that the expectedOutput is not the same as their%
+%% measured.												%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
@@ -353,9 +361,92 @@ checkCorrectness([H|EndNodes]):-
 	checkCorrectness(EndNodes).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% findProblem tries to find wrong components through the   %%
+%% the users input. It goes by the minimal conflict list and%%
+%% ask the users measurements, It add these fact and the 	%%
+%% calculateds the estimated output. It compares this by the%%
+%% expectedOutput, It does this for every model. 			%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+findProblem([]):-
+
+	write('No faults').
+
+findProblem([[ComponentName1, ComponentName2]|Tail]):-
+
+	component(ComponentName1,_, [Input1,Input2], Output1),
+	component(ComponentName2,_, [Input3,Input4], Output2),
+	getAllTheValues([Input1, Input2]),
+	calculatedNewMeasuredValue(ComponentName1, MeasuredValue1),
+	expectedOutput(Output1, ExpectedValue1),
+	ExpectedValue1 == MeasuredValue1,
+	write('the component is working correct'),
+	write(ComponentName1),
+	write(' and '),
+	getAllTheValues([Input3, Input4]),
+	calculatedNewMeasuredValue(ComponentName2, MeasuredValue2),
+	expectedOutput(Output2, ExpectedValue2),
+	ExpectedValue2 == MeasuredValue2,
+	write('the component is working correct'),
+	write(ComponentName2),
+	write(' broke.')	
+	findProblem(Tail).
+	
+findProblem([[ComponentName1,ComponentName2]|_]):-
+
+	write('the wrong component is '),
+	write(ComponentName1),
+	write(' and '),
+	write(ComponentName2),
+	write(' broke.').
 
 
+findProblem([[ComponentName]|Tail]):-
 
+	component(ComponentName,_, [Input1,Input2], Output),
+	getAllTheValues([Input1, Input2]),
+	calculatedNewMeasuredValue(ComponentName, MeasuredValue),
+	expectedOutput(Output, ExpectedValue),
+	ExpectedValue == MeasuredValue,
+	findProblem(Tail).
+
+findProblem([[ComponentName]|_]):-
+
+	write('the wrong component is '),
+	write(ComponentName),
+	write(' broke.').
+
+	
+calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
+
+	component(ComponentName, ComponentSort, [Input1,Input2],OutputName),
+	measuredInput(Input1, Value1),
+	measuredInput(Input2, Value2),
+	(ComponentSort == adder, MeasuredValue is Value1 + Value2;
+	ComponentSort == multi, MeasuredValue is Value1 * Value2),!,
+	assert( measuredInput(OutputName ,MeasuredValue)).
+
+getAllTheValues([]).
+
+getAllTheValues([Input1|Rest]):-
+
+	not( measuredInput(Input1, _) ),
+	askInputFromUser(Input1, Value),
+	assert( measuredInput(Input1, Value)),
+	getAllTheValues(Rest).
+
+getAllTheValues([_|Rest]):-
+
+	getAllTheValues(Rest).
+
+askInputFromUser(Input1, Output):-
+
+	write('What is the measured Input from point: '),
+	write(Input1),
+	nl,
+	read(Output).
+	
 
 
 
@@ -420,12 +511,6 @@ findPreviousStep(Output):-
 %% conflict herkenning
 %3 optie of a1 of m2 of m1 of m1 en m2. 
 
-
-findCandidates([]).
-
-findCandidates([First|Rest]):-
-	askInputFromUser(First),
-	findCandidates(Rest).
 /*
 askInputFromUser([]).
 
@@ -446,85 +531,3 @@ askInputFromUser([FirstElement|Rest]):-
 askInputFromUser([_|Rest]):-
 	askInputFromUser(Rest).
 */
-
-
-findProblem([]):-
-
-	write('No faults').
-
-findProblem([[ComponentName1, ComponentName2]|Tail]):-
-
-	component(ComponentName1,_, [Input1,Input2], Output1),
-	component(ComponentName2,_, [Input3,Input4], Output2),
-	getAllTheValues([Input1, Input2]),
-	calculatedNewMeasuredValue(ComponentName1, MeasuredValue1),
-	expectedOutput(Output1, ExpectedValue1),
-	ExpectedValue1 == MeasuredValue1,
-	write('the component is working correct'),
-	write(ComponentName1),
-	write(' and '),
-	getAllTheValues([Input3, Input4]),
-	calculatedNewMeasuredValue(ComponentName2, MeasuredValue2),
-	expectedOutput(Output2, ExpectedValue2),
-	ExpectedValue2 == MeasuredValue2,
-	write('the component is working correct'),
-	write(ComponentName2),
-	write(' broke.')	
-	findProblem(Tail).
-	
-findProblem([[ComponentName1,ComponentName2]|_]):-
-
-	write('the wrong component is '),
-	write(ComponentName1),
-	write('and'),
-	write(ComponentName2),
-	write(' broke.').
-
-
-findProblem([[ComponentName]|Tail]):-
-
-	component(ComponentName,_, [Input1,Input2], Output),
-	getAllTheValues([Input1, Input2]),
-	calculatedNewMeasuredValue(ComponentName, MeasuredValue),
-	expectedOutput(Output, ExpectedValue),
-	ExpectedValue == MeasuredValue,
-	findProblem(Tail).
-
-findProblem([[ComponentName]|_]):-
-
-	write('the wrong component is '),
-	write(ComponentName),
-	write(' broke.').
-
-	
-calculatedNewMeasuredValue(ComponentName, MeasuredValue):-
-
-	component(ComponentName, ComponentSort, [Input1,Input2],OutputName),
-	measuredInput(Input1, Value1),
-	measuredInput(Input2, Value2),
-	(ComponentSort == adder, MeasuredValue is Value1 + Value2;
-	ComponentSort == multi, MeasuredValue is Value1 * Value2),!,
-	assert( measuredInput(OutputName ,MeasuredValue)).
-
-getAllTheValues([]).
-
-getAllTheValues([Input1|Rest]):-
-
-	not( measuredInput(Input1, _) ),
-	askInputFromUser(Input1, Value),
-	assert( measuredInput(Input1, Value)),
-	getAllTheValues(Rest).
-
-getAllTheValues([_|Rest]):-
-
-	getAllTheValues(Rest).
-
-askInputFromUser(Input1, Output):-
-
-	write('What is the measured Input from point: '),
-	write(Input1),
-	nl,
-	read(Output).
-	
-
-
