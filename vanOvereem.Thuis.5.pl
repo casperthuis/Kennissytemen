@@ -10,6 +10,9 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 :- dynamic input/2.
 :- dynamic output/2.
 :- dynamic component/4.
@@ -24,7 +27,7 @@ showAllOutput:-
 	findall([X,Y], expectedOutput(X,Y), List),
 	write_ln(List).
 
-showAllCompnents:-
+showAllComponents:-
 	findall([X,Y,Q,Z], component(X,Y,Q,Z), List),
 	write_ln(List).
 
@@ -36,6 +39,7 @@ reset :-
 
 go1:-
 	reset,
+
 	assert( input(a, 3)),
 	assert( input(b, 2)),
 	assert( input(c, 2)),
@@ -92,21 +96,6 @@ go2:-
 	assert( component(a4, adder, [o, p], q)).
 
 
-forwardReasoning(Node, GoodSet):-
-	findall([Input1,Input2], component(_,_,[Input1,Input2],_), InputList),
-
-	forward(Node, InputList, GoodSet)
-	.
-/*
-forward(Node, _, _):-
-	findall(Nodes, (expectedOutput(Node,_), not( input(Node,_))), NodeList),
-	member(Node,NodeList).
-
-forward(Node, [H|InputList] ,GoodSet):-
-	H = [Input1, Input2],
-	component(ComponentName, Sort, [Input1, Input2], OutputName).
-*/
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -125,7 +114,7 @@ findNextStep([H|Rest]):-
 	write( 'Derived: ' ), write_ln( expectedOutput(OutputName, Value)),
 	checkIfOutputIsInput(OutputName, Value ),
     findNextStep(Rest).
-
+ 
 findNextStep([H|Rest]):-
 	append(Rest, H, NewRest),
 	findNextStep(NewRest).		
@@ -149,6 +138,12 @@ checkIfOutputIsInput(OutputName, Value):-
 
 checkIfOutputIsInput(_,_).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 findFaultNodes(FaultList):-
 	findall([Name,Value], measuredOutput(Name, Value), MeasuredList),
 	findTheWrongValues(MeasuredList, FaultList).
@@ -164,31 +159,51 @@ findTheWrongValues([First|MeasuredList], [First|FaultList]):-
 findTheWrongValues([_|MeasuredList], FaultList):-
 	findTheWrongValues(MeasuredList, FaultList).
 
-getUsedComponentSet(Name , Output):-
-	List = [],
-	getSet(Name , List, Conflictset),
-	list_to_set(Conflictset, ReverseList),
-	reverse(ReverseList, Output).
 
-getSet(Name, List, Output):-
-	findall(Inputs, measuredInput(Inputs, _), AnswerList),
-	member(Name, AnswerList),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+getGoodSet(Name , Output):-
+	List = [],
+	getUsedComponents(Name , List, Componentset),
+	list_to_set(Componentset, ReversedList),
+	reverse(ReversedList, Output).
+
+getUsedComponents(Name, List, Output):-
+	findall(Inputs, input(Inputs, _), AnswerList),
+	member(Name, AnswerList),!,
 	List = Output.
 	
-getSet(Name, List, Output2):-
+getUsedComponents(Name, List, Output2):-
 	component(ComponentName, _, [Input1, Input2], Name),
-	getSet(Input1, [ComponentName|List], Output1),
-	getSet(Input2, [ComponentName|Output1], Output2).
+	getUsedComponents(Input1, [ComponentName|List], Output1),
+	getUsedComponents(Input2, [ComponentName|Output1], Output2).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Hier even een voorbeeldje schrijven van hoe dit gaat.
+
+getValueOfOther(ComponentSort, OutputValue, ExpectedInputValue, OtherInputValue):-
+	(ComponentSort == multi, backwardMulti(OutputValue, ExpectedInputValue, OtherInputValue);
+	ComponentSort == adder, backwardAdder(OutputValue, ExpectedInputValue, OtherInputValue)), !.
+
+backwardMulti(Value, ExpectedValue , Output):-
+	Output is Value / ExpectedValue.
+
+backwardAdder(Value, ExpectedValue , Output):-
+	Output is Value - ExpectedValue.
 
 
-
-
-
-getValueOfOther(Sort, Value, ExpectedValue, Output):-
-	(Sort == multi, bmulti(Value, ExpectedValue, Output);
-	Sort == adder, badder(Value, ExpectedValue, Output)).
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 minimalList(List):-
@@ -223,11 +238,15 @@ getValueOfOther(Sort, Value, Value1, Value2):-
 	(Sort == multi, bmulti(Value, Value1, Value2);
 	Sort == adder, badder(Value, Value1, Value2)).
 
+/*findMinimalSet(List):-
+	findFaultNodes(Faults),!,
+	Faults = [[Name, Value]|_],
+	component(ComponentName, Sort, [Input1,Input2], Name),
+	input(Input1, Value1),
+	input(Input2, Value2).
+	
+	% Hier moeten we kunnen kijken of input1 en input2 groter zijn dan value.
 
-
-
-
-/*
 %findFaultNodes geeft nu 1 foute node terug moeten er mogelijk meerdere zijn!!!!!!
 findMinimalConflictSet(MinimalList):-
 	findFaultNodes(WrongNode),
@@ -301,5 +320,49 @@ findPreviousStep(Output):-
 
 %% conflict herkenning
 %3 optie of a1 of m2 of m1 of m1 en m2. 
+
+
+findCandidates([]).
+
+findCandidates([First|Rest]):-
+	askInputFromUser(First),
+	findCandidates(Rest).
+/*
+askInputFromUser([]).
+
+askInputFromUser([FirstElement|Rest]):-
+	component(FirstElement,Sort,[Input1,Input2],_),
+	not( measuredOutput(Input1, _)),
+	not( measuredOutput(Input2, _)),
+	write("What is the measuredInput from point: "),
+	write(Input1),
+	readln(Value1),
+	assert(measuredOutput(Input1, Value1 )),
+	write("What is the measuredInput from point: "),
+	write(Input2),
+	readln(Value2),
+	assert(measuredOutput(Input2, Value2 )),
+	askInputFromUser(Rest).
+	
+askInputFromUser([_|Rest]):-
+	askInputFromUser(Rest).
+*/
+
+
+findProblem([]).
+	
+findProblem([First|Tail]):-
+	component(First, Sort, [Input1,Input2],_),
+	askInputFromUser(Input1, MeasuredValue2)
+.
+askInputFromUser(Input1, Output):-
+	write('What is the measured Output from point: '),
+	write(Input1),
+	nl,
+	read(Output).
+	
+
+
+
 
 
