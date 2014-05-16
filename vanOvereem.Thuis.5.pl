@@ -50,6 +50,8 @@ go1:-
 	assert( component(a2, adder, [y, z], g)),
 	assert( measuredOutput(f, 10)),
 	assert( measuredOutput(g, 12)),
+	assert( measuredInput(y, 6)),
+	assert( measuredInput(x, 6)),
 	assert( measuredInput(a, 3)),
 	assert( measuredInput(b, 2)),
 	assert( measuredInput(c, 2)),
@@ -91,13 +93,26 @@ go2:-
 	assert( component(a4, adder, [o, p], q)).
 
 
+forwardReasoning(Node, GoodSet):-
+	findall([Input1,Input2], component(_,_,[Input1,Input2],_), InputList),
+
+	forward(Node, InputList, GoodSet)
+	.
+/*
+forward(Node, _, _):-
+	findall(Nodes, (expectedOutput(Node,_), not( input(Node,_))), NodeList),
+	member(Node,NodeList).
+
+forward(Node, [H|InputList] ,GoodSet):-
+	H = [Input1, Input2],
+	component(ComponentName, Sort, [Input1, Input2], OutputName).
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 multiply([X,Y],Z):-
 	Z is X * Y.
-
 
 makeGrid:-
 	findall([X,Y], component(_, _, [X, Y], _), InputList),
@@ -137,7 +152,6 @@ checkIfOutputIsInput(OutputName, Value):-
 
 checkIfOutputIsInput(_,_).
 
-
 findFaultNodes(FaultList):-
 	findall([Name,Value], measuredOutput(Name, Value), MeasuredList),
 	findTheWrongValues(MeasuredList, FaultList).
@@ -153,9 +167,7 @@ findTheWrongValues([First|MeasuredList], [First|FaultList]):-
 findTheWrongValues([_|MeasuredList], FaultList):-
 	findTheWrongValues(MeasuredList, FaultList).
 
-getUsedComponentSet(FaultNodes , Output):-
-	member(X, FaultNodes),
-	X = [Name, _ ],
+getUsedComponentSet(Name , Output):-
 	List = [],
 	getSet(Name , List, Conflictset),
 	list_to_set(Conflictset, ReverseList),
@@ -171,7 +183,64 @@ getSet(Name, List, Output2):-
 	getSet(Input1, [ComponentName|List], Output1),
 	getSet(Input2, [ComponentName|Output1], Output2).
 
+
+
+bmulti(Value, ExpectedValue , Output):-
+	Output is Value / ExpectedValue.
+
+badder(Value, ExpectedValue , Output):-
+	Output is Value - ExpectedValue.
+
+
+getValueOfOther(Sort, Value, ExpectedValue, Output):-
+	(Sort == multi, bmulti(Value, ExpectedValue, Output);
+	Sort == adder, badder(Value, ExpectedValue, Output)).
+
+
+findMinimalSet(List):-
+	findFaultNodes(Faults),!,
+	Faults = [[Name, Value]|_],
+	component(ComponentName, Sort, [Input1,Input2], Name),
+	input(Input1, Value1),
+	input(Input2, Value2),
+	
+	% Hier moeten we kunnen kijken of input1 en input2 groter zijn dan value.
+.
+
+
+
+checkIfBiggerThanOutPut(Sort ,Value, Value1, Value2):-
+	Value1 > Value;
+	Value2 > 
+
 /*
+%findFaultNodes geeft nu 1 foute node terug moeten er mogelijk meerdere zijn!!!!!!
+findMinimalConflictSet(MinimalList):-
+	findFaultNodes(WrongNode),
+	WrongNode = [[Name, Value]],
+	getUsedComponentSet(Name, Goodset),
+	getStarted(Name, Value, Goodset, MinimalList).
+	%component(ComponentName, _ , _ , Name).
+
+
+getStarted(Name, Value, Goodset, MinimalList):-
+	findall([Input1,Input2], component(ComponentName, Sort, [Input1,Input2], Name), InputList),
+	selectRandomNodes(InputList, X, Y),
+	%select(Component, Goodset, MinimalList),
+	expectedOutput(X, ExpectedValue),
+	getValueOfOther(Sort, Value, ExpectedValue, OutputValue),
+	%not ( compareExpectedWithMeasured( OutputValue, Y)),
+	Output is  < 0  .
+
+selectRandomNodes(InputList, X, Y):-
+	member(X, InputList),
+	select(X, InputList, NewList),
+	member(Y, NewList).
+
+compareExpectedWithMeasured(Output, Input2):-
+	measuredInput(Input2, Value),
+	Output == Value.
+
 backward2(Name, List):-
 	findall(Inputs, measuredInput(Inputs, _), AnswerList),
 	member(Name, AnswerList).
@@ -218,3 +287,5 @@ findPreviousStep(Output):-
 
 %% conflict herkenning
 %3 optie of a1 of m2 of m1 of m1 en m2. 
+
+
